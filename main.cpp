@@ -16,13 +16,48 @@ void printBigInt(){
 
 }
 
+mpz_class pow(mpz_class base, unsigned long exp){
+		mpz_class res;
+		mpz_t temp;
+		mpz_init(temp);
+		
+		mpz_set(temp, base.get_mpz_t());
+		mpz_pow_ui(temp, temp, exp);
+		res = mpz_class(temp);
+		mpz_clear(temp);
+		return res;
+		
+}
 
-int isPrime(mpz_class n){
+mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
+		mpz_class res;
+		res = base;
+		char c;
+		string binExponent = exp.get_str(2);
+		for(unsigned i=1; i< binExponent.length();i++){			
+			c = binExponent.at(i);
+
+			if(c=='1'){
+				res = pow(res, 2);
+				res = (res*base) % mod;
+				
+			}
+			if(c=='0'){
+				res = pow(res,2);
+				res = (res) % mod;
+			}
+			cout << "res is "<< res<< "\n";
+		}
+		return res;
+}
+
+
+int isPrime(mpz_class n, int rep){
 	
-	//
-	mpz_class rest, t, s, a, test;
+	mpz_class rest, t, s, a, u;
 	gmp_randclass rand (gmp_randinit_default);
-
+	bool isPrime;
+	isPrime = false;	
 	if(n==2){
 		return 1;
 	}
@@ -37,68 +72,55 @@ int isPrime(mpz_class n){
 	s=0;
 	while(t%2 == 0){
 		t= t >> 1;
-		cout << "t is "<< t<< "\n";
+		//cout << "t is "<< t<< "\n";
 		s=s+1;
 	}
-	cout << "s is "<< s<< "\n";
+	//cout << "s is "<< s<< "\n";
 
-	//a is a random number (1<=a<=N-1)
-	a = rand.get_z_range(n-1) +1;
+	for(int i =0; i< rep;++i){
+		//a is a random number (1<=a<=N-1)
+		a = rand.get_z_range(n-1) +1;
+		//cout << "\n Rand value a is " << a;
+		//cout << "\n value of t " << t << " value of s " << s;
+		//we compute a^t mod 
+		u= modExponential(a,t,n);
+		//cout << "\n u0 is " << u;
+		if(u==1 || u == n-1){
+			isPrime = true;
+		}
+		else{
+			for(int j =1;j<=s;++j ){
+				u = pow(u,2);
+				//cout << "\n u" << j << " is " << u;
+				if(u==n-1){
+					isPrime =true;
+					break;
+				}
+			}
 
-	//we compute a^t mod 
-
-	
-
-	//print binary representation of 67
-	test = 67;
-	cout << "bin-test is "<< test.get_str(2) << "\n" ;
-
-	//we comput a 
-	//find u0 such as u0 congruent were a is a random number (1<=a<=N-1)
-
+		}
+		if(!isPrime){
+			return 0;
+		}
+		isPrime=false;
+	}
 
 	return 1;
 }
 
-mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
-		mpz_class res;
-		mpz_t rop;
-		mpz_init(rop);
-		char c;
-		string binExponent = exp.get_str(2);
-		mpz_set(rop, base.get_mpz_t());
-
-		for(unsigned i=1; i< binExponent.length();i++){			
-			c = binExponent.at(i);
-			
-			if(c=='1'){
-
-				mpz_pow_ui(rop, rop, 2);
-				res = mpz_class(rop);
-				res = (res*2) % mod;
-				mpz_set(rop, res.get_mpz_t());
-			}
-			if(c=='0'){
-				mpz_pow_ui(rop, rop, 2);
-				res = mpz_class(rop);
-				res = (res) % mod;
-				mpz_set(rop, res.get_mpz_t());
-
-			}
-
-		}
-		return res;
-}
 
 
 int main()
 {
-	mpz_class base, exp, mod;
-	base= 2;
-	exp = 154;
-	mod =155;
+	mpz_class t1, h1,h2,h3;
+	t1 = "169743212304909";
+	h1 = 5;
+	h2 = 3;
+	h3 = 7;
+	
+	cout << "\n t1 result "<< isPrime(t1, 10)<< "\n";
+
 		
-	cout<< modExponential(base, exp,mod) <<"\n";
 	return (0);
 }
 
