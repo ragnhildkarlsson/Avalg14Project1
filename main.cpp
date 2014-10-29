@@ -29,6 +29,35 @@ mpz_class pow(mpz_class base, unsigned long exp){
 		
 }
 
+
+mpz_class * genTestData(int size, int j){
+	
+	mpz_class sufix,ten, startval;
+	ten = 10;
+
+	sufix = pow(ten, 60+j);
+	static mpz_class data[200];
+	string micke = "9207064750";
+	string ragnhild = "8502142782";
+	startval = micke;
+	startval = startval*sufix;
+	int index = 0;
+	for(int i=1; i<= size;++i){
+		data[index] = startval+i;
+		++index;
+	}
+	startval = ragnhild;
+	startval = startval*sufix;	
+	for(int i=1; i<= size;++i){
+		data[index] = startval+i;
+		++index;
+	}
+	return data;
+
+
+}
+
+
 mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
 		mpz_class res;
 		res = base;
@@ -112,13 +141,17 @@ int isPrime(mpz_class n, int rep){
 
 int main()
 {
-	mpz_class t1, h1,h2,h3;
-	t1 = "169743212304909";
-	h1 = 5;
-	h2 = 3;
-	h3 = 7;
+	// mpz_class t1, h1,h2,h3;
+	// t1 = "169743212304909";
+	// h1 = 5;
+	// h2 = 3;
+	// h3 = 7;
 	
-	cout << "\n t1 result "<< isPrime(t1, 10)<< "\n";
+	// cout << "\n t1 result "<< isPrime(t1, 10)<< "\n";
+	mpz_class* data = genTestData(100,0);
+	for(int i=0; i<100*2;++i){
+		cout << "\n " << data[i];
+	}
 
 		
 	return (0);
