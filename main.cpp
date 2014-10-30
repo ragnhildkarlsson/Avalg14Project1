@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <gmpxx.h>
+#include <vector>
 
 
 using namespace std;
@@ -28,34 +29,52 @@ mpz_class pow(mpz_class base, unsigned long exp){
 		return res;
 		
 }
-
-
-mpz_class * genTestData(int size, int j){
-	
-	mpz_class sufix,ten, startval;
-	ten = 10;
-
-	sufix = pow(ten, 60+j);
-	static mpz_class data[200];
-	string micke = "9207064750";
-	string ragnhild = "8502142782";
-	startval = micke;
-	startval = startval*sufix;
-	int index = 0;
-	for(int i=1; i<= size;++i){
-		data[index] = startval+i;
-		++index;
+mpz_class gcd(mpz_class n1, mpz_class n2){
+	mpz_class t, u,v ;
+	if(n1>n2){
+		u = n1;
+		v= n2;
 	}
-	startval = ragnhild;
-	startval = startval*sufix;	
-	for(int i=1; i<= size;++i){
-		data[index] = startval+i;
-		++index;
+	else{
+		u = n2;
+		v= n1;
 	}
-	return data;
+	while(v>0){
+		t= u;
+		u=v;
+		v= t%v;
+	}
 
-
+	return u <0 ? -u : u;
 }
+
+
+// mpz_class * genTestData(int size, int j){
+	
+// 	mpz_class sufix,ten, startval;
+// 	ten = 10;
+
+// 	sufix = pow(ten, 60+j);
+// 	static mpz_class data[200];
+// 	string micke = "9207064750";
+// 	string ragnhild = "8502142782";
+// 	startval = micke;
+// 	startval = startval*sufix;
+// 	int index = 0;
+// 	for(int i=1; i<= size;++i){
+// 		data[index] = startval+i;
+// 		++index;
+// 	}
+// 	startval = ragnhild;
+// 	startval = startval*sufix;	
+// 	for(int i=1; i<= size;++i){
+// 		data[index] = startval+i;
+// 		++index;
+// 	}
+// 	return data;
+
+
+// }
 
 
 mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
@@ -75,7 +94,7 @@ mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
 				res = pow(res,2);
 				res = (res) % mod;
 			}
-			cout << "res is "<< res<< "\n";
+			//	cout << "res is "<< res<< "\n";
 		}
 		return res;
 }
@@ -120,7 +139,8 @@ int isPrime(mpz_class n, int rep){
 		else{
 			for(int j =1;j<=s;++j ){
 				u = pow(u,2);
-				//cout << "\n u" << j << " is " << u;
+				u = u % n;
+		//		cout << "\n u" << j << " is " << u;
 				if(u==n-1){
 					isPrime =true;
 					break;
@@ -137,21 +157,124 @@ int isPrime(mpz_class n, int rep){
 	return 1;
 }
 
+mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
+	// check small primes
+	if((N % 2) == 0){
+		return 2;
+	}
 
+	mpz_class a,b, p;
+	a = seed;
+	b = seed;
+
+	do{
+		a=(pow(a,2) + add) % N;
+		b=(pow(b,2) +add) % N;
+		b =(pow(b,2) +add) % N;
+
+		cout << "\n a is " << a << " b is " << b;	
+
+		if(a == b) {
+			break;
+
+		}
+		p = gcd(abs(a-b),N);
+		if(p>1){
+			return p;
+		}
+
+
+	}while(a!=b);
+
+	p = "-1";
+	return p;
+
+}
+
+
+void factorize(mpz_class N, int trials){
+	cout << "\n Trying to factorize " << N;
+	vector<mpz_class> factors;	
+	gmp_randclass rand (gmp_randinit_default);
+	
+	mpz_class seed, add, factor, temp;
+	bool primFound = false;
+	while(N!=1){
+		factor = N;
+		cerr << "\nFactor in the outer loop is now " << factor;		
+		if(isPrime(factor,10)){
+			factors.push_back(factor);
+			break;
+		}
+
+		while(!primFound){
+			cerr << "\n Entering primFound loop with factor " << factor;
+			for(int i = 0; i < trials; ++i){
+				seed = rand.get_z_range(factor-1) +1;
+				add = 1; //TODO Hard CODED
+				cerr << "\n Seed is " << seed << " add is " << add;
+				temp = pollard(seed, add, factor);
+					if(temp > 0){
+						factor = temp;
+						cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
+						if(factor > 0 && isPrime(factor,10)){
+							factors.push_back(factor);
+							primFound = true;
+							break;
+						}
+						// Compsite number found, try to factor it into a prime
+						if(factor > 0) {
+							break;
+						}
+					}
+				}
+				// Tried trial times and still failed?
+				if(temp < 0){
+					cout << "\n Factorization failed!";
+					return;
+				}
+
+			}
+			N = N / factor;
+			primFound = false;
+
+		}
+	cout << "\n The number of prime factors is " << factors.size(); 
+	//print factors
+	for (unsigned i = 0; i < factors.size() ; ++i)
+	{
+		cout <<"\n " << factors.at(i);
+	}
+	cout << "\n";
+	}
+	
 
 int main()
 {
-	// mpz_class t1, h1,h2,h3;
-	// t1 = "169743212304909";
-	// h1 = 5;
-	// h2 = 3;
-	// h3 = 7;
-	
+	int trials;
+	trials = 2;
+
+	 mpz_class h1,h2, h3,t1;
+	 t1 = "169743212304909";
+	 h1 = 3;
+	 h2 = 1;
+	 h3 = 1729;
+	 //1729
+
+	 //cout << "\npollard says " << pollard(h1,h2,h3);
+
+	 //	cout << "is it red alert here?";
+	 factorize(t1, trials);
+	 //factorize(h2, trials);	
+
+	// cout << "test 1 " <<gcd(h1,h2);
+	// cout << "test 2 " <<gcd(h2,h1);
+	// cout << "test 1 " <<pollard(h1,h2,h3);	
 	// cout << "\n t1 result "<< isPrime(t1, 10)<< "\n";
-	mpz_class* data = genTestData(100,0);
-	for(int i=0; i<100*2;++i){
-		cout << "\n " << data[i];
-	}
+	// mpz_class* data = genTestData(100,0);
+	// for(int i=0; i<100*2;++i){
+	// 	cout << "\n " << data[i];
+	// }
 
 		
 	return (0);
