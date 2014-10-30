@@ -7,7 +7,8 @@
 using namespace std;
 
 
-
+static const  int primes[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101};
+static const int primeLength = 26;
 
 void printBigInt(){
 	mpz_class a;
@@ -49,32 +50,32 @@ mpz_class gcd(mpz_class n1, mpz_class n2){
 }
 
 
-// mpz_class * genTestData(int size, int j){
+mpz_class * genTestData(int size, int j){
 	
-// 	mpz_class sufix,ten, startval;
-// 	ten = 10;
+	mpz_class sufix,ten, startval;
+	ten = 10;
 
-// 	sufix = pow(ten, 60+j);
-// 	static mpz_class data[200];
-// 	string micke = "9207064750";
-// 	string ragnhild = "8502142782";
-// 	startval = micke;
-// 	startval = startval*sufix;
-// 	int index = 0;
-// 	for(int i=1; i<= size;++i){
-// 		data[index] = startval+i;
-// 		++index;
-// 	}
-// 	startval = ragnhild;
-// 	startval = startval*sufix;	
-// 	for(int i=1; i<= size;++i){
-// 		data[index] = startval+i;
-// 		++index;
-// 	}
-// 	return data;
+	sufix = pow(ten, 60+j);
+	static mpz_class data[200];
+	string micke = "9207064750";
+	string ragnhild = "8502142782";
+	startval = micke;
+	startval = startval*sufix;
+	int index = 0;
+	for(int i=1; i<= size;++i){
+		data[index] = startval+i;
+		++index;
+	}
+	startval = ragnhild;
+	startval = startval*sufix;	
+	for(int i=1; i<= size;++i){
+		data[index] = startval+i;
+		++index;
+	}
+	return data;
 
 
-// }
+}
 
 
 mpz_class modExponential(mpz_class base, mpz_class exp, mpz_class mod){
@@ -159,8 +160,11 @@ int isPrime(mpz_class n, int rep){
 
 mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	// check small primes
-	if((N % 2) == 0){
-		return 2;
+
+	for(int i = 0; i < primeLength; ++i){
+		if((N % primes[i]) == 0){
+			return primes[i];
+		}
 	}
 
 	mpz_class a,b, p;
@@ -172,7 +176,7 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 		b=(pow(b,2) +add) % N;
 		b =(pow(b,2) +add) % N;
 
-		cout << "\n a is " << a << " b is " << b;	
+		//cout << "\n a is " << a << " b is " << b;	
 
 		if(a == b) {
 			break;
@@ -201,22 +205,22 @@ void factorize(mpz_class N, int trials){
 	bool primFound = false;
 	while(N!=1){
 		factor = N;
-		cerr << "\nFactor in the outer loop is now " << factor;		
+		//cerr << "\nFactor in the outer loop is now " << factor;		
 		if(isPrime(factor,10)){
 			factors.push_back(factor);
 			break;
 		}
 
 		while(!primFound){
-			cerr << "\n Entering primFound loop with factor " << factor;
+			//cerr << "\n Entering primFound loop with factor " << factor;
 			for(int i = 0; i < trials; ++i){
 				seed = rand.get_z_range(factor-1) +1;
 				add = 1; //TODO Hard CODED
-				cerr << "\n Seed is " << seed << " add is " << add;
+				//cerr << "\n Seed is " << seed << " add is " << add;
 				temp = pollard(seed, add, factor);
 					if(temp > 0){
 						factor = temp;
-						cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
+						//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
 						if(factor > 0 && isPrime(factor,10)){
 							factors.push_back(factor);
 							primFound = true;
@@ -255,12 +259,14 @@ int main()
 	trials = 2;
 
 	 mpz_class h1,h2, h3,t1;
-	 t1 = "169743212304909";
-	 h1 = 3;
+	 h1 = 561;
 	 h2 = 1;
 	 h3 = 1729;
 	 //1729
 
+	 mpz_class* data = genTestData(100,0);
+	 t1 = data[0];
+	 cout << "\nt1 is " << t1;
 	 //cout << "\npollard says " << pollard(h1,h2,h3);
 
 	 //	cout << "is it red alert here?";
@@ -271,7 +277,7 @@ int main()
 	// cout << "test 2 " <<gcd(h2,h1);
 	// cout << "test 1 " <<pollard(h1,h2,h3);	
 	// cout << "\n t1 result "<< isPrime(t1, 10)<< "\n";
-	// mpz_class* data = genTestData(100,0);
+	// 
 	// for(int i=0; i<100*2;++i){
 	// 	cout << "\n " << data[i];
 	// }
