@@ -172,11 +172,12 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	b = seed;
 
 	do{
-		a=(pow(a,2) + add) % N;
-		b=(pow(b,2) +add) % N;
-		b =(pow(b,2) +add) % N;
+		a=(pow(a,2) - add) % N;
+		b=(pow(b,2) -add) % N;
+		b =(pow(b,2) -add) % N;
+		b =(pow(b,2) -add) % N;
 
-		//cout << "\n a is " << a << " b is " << b;	
+		//cerr << "\n a is " << a << " b is " << b;	
 
 		if(a == b) {
 			break;
@@ -208,21 +209,23 @@ void factorize(mpz_class N, int trials){
 		//cerr << "\nFactor in the outer loop is now " << factor;		
 		if(isPrime(factor,10)){
 			factors.push_back(factor);
+			cerr << "\n Added factor " << factor;
 			break;
 		}
 
 		while(!primFound){
-			//cerr << "\n Entering primFound loop with factor " << factor;
+			cerr << "\n Entering primFound loop with factor " << factor;
 			for(int i = 0; i < trials; ++i){
 				seed = rand.get_z_range(factor-1) +1;
 				add = 1; //TODO Hard CODED
-				//cerr << "\n Seed is " << seed << " add is " << add;
+				cerr << "\n Seed is " << seed << " add is " << add;
 				temp = pollard(seed, add, factor);
 					if(temp > 0){
 						factor = temp;
 						//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
 						if(factor > 0 && isPrime(factor,10)){
 							factors.push_back(factor);
+							cerr << "\n Added factor " << factor;
 							primFound = true;
 							break;
 						}
@@ -265,7 +268,8 @@ int main()
 	 //1729
 
 	 mpz_class* data = genTestData(100,0);
-	 t1 = data[0];
+	 //data 4 bra exempel på pollard 
+	 t1 = data[8];
 	 cout << "\nt1 is " << t1;
 	 //cout << "\npollard says " << pollard(h1,h2,h3);
 
