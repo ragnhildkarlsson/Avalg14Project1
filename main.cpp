@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <gmpxx.h>
 #include <vector>
+#include <ctime>
+#include <limits>
+
 
 
 using namespace std;
@@ -167,27 +170,52 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 		}
 	}
 
-	mpz_class a,b, p;
+	mpz_class a,b, p, product, medium, maxint;
+	maxint =  std::numeric_limits<int>::max();
+	product = 1;
 	a = seed;
 	b = seed;
 
+	int maxIter;
+	int maxInt;
+	maxIter = 1000;
+
+	// //Large N
+	maxInt = std::numeric_limits<int>::max();
+	// maxIter = maxInt;
+
+	// //Medium N
+	// medium =10;
+	// medium = pow(medium,20);
+
+	// if(N<medium){
+	// 	maxIter = 100;	
+	// }
+	
+	//small N
+	if(N<maxInt){
+		maxIter = 1;
+	}
+	
 	do{
+		for(int i =0; i<maxIter;i++){
 		a=(pow(a,2) - add) % N;
 		b=(pow(b,2) -add) % N;
 		b =(pow(b,2) -add) % N;
 		b =(pow(b,2) -add) % N;
-
 		//cerr << "\n a is " << a << " b is " << b;	
 
 		if(a == b) {
 			break;
 
 		}
-		p = gcd(abs(a-b),N);
+		product = product*abs(a-b);
+		
+		}
+		p = gcd(product,N);
 		if(p>1){
 			return p;
 		}
-
 
 	}while(a!=b);
 
@@ -199,6 +227,13 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 
 void factorize(mpz_class N, int trials){
 	cout << "\n Trying to factorize " << N;
+	
+	std::clock_t start;
+    double duration;
+
+    start = std::clock();
+
+    cout << start;
 	vector<mpz_class> factors;	
 	gmp_randclass rand (gmp_randinit_default);
 	
@@ -253,11 +288,15 @@ void factorize(mpz_class N, int trials){
 		cout <<"\n " << factors.at(i);
 	}
 	cout << "\n";
+	duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
+    cout<<"Calculation time: "<< duration <<'\n';	
 	}
-	
+
+
 
 int main()
 {
+
 	int trials;
 	trials = 2;
 
@@ -267,11 +306,12 @@ int main()
 	 h3 = 1729;
 	 //1729
 
-	 mpz_class* data = genTestData(100,0);
+	 mpz_class* data = genTestData(100,20);
 	 //data 4 bra exempel på pollard 
-	 t1 = data[8];
+	 t1 = data[1];
 	 cout << "\nt1 is " << t1;
 	 //cout << "\npollard says " << pollard(h1,h2,h3);
+
 
 	 //	cout << "is it red alert here?";
 	 factorize(t1, trials);
