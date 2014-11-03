@@ -156,9 +156,9 @@ int isPrime(mpz_class n, int rep){
 mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	// check small primes
 
-	std::clock_t pClock;
-    double duration;
-    pClock = std::clock();
+	//std::clock_t pClock;
+    //double duration;
+    //pClock = std::clock();
 
 	for(int i = 0; i < primeLength; ++i){
 		if((N % primes[i]) == 0){
@@ -202,12 +202,12 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 		if(p>1){
 			return p;
 		}
-		duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
-	}while(a!=b && duration<5);
+		//duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
+	}while(a!=b);
 
 
 	
-    cout<<"Calculation time: "<< duration <<'\n';	
+    //cout<<"Calculation time: "<< duration <<'\n';	
 
 
 
@@ -240,18 +240,19 @@ int factorize(mpz_class N, int trials){
 		}
 
 		while(!primFound){
-			//cerr << "\n Entering primFound loop with factor " << factor;
+			cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
 			for(int i = 0; i < trials; ++i){
 				seed = rand.get_z_range(factor-1) +1;
 				add = 1; //TODO Hard CODED
-				//cerr << "\n Seed is " << seed << " add is " << add;
+				cerr << i << " ";
+				//cerr << "\n Seed is \n " << seed;
 				temp = pollard(seed, add, factor);
 					if(temp > 0){
 						factor = temp;
 						//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
 						if(factor > 0 && isPrime(factor,10)){
 							factors.push_back(factor);
-							//cerr << "\n Added factor " << factor;
+							cerr << "\n Added factor " << factor;
 							primFound = true;
 							break;
 						}
@@ -298,10 +299,11 @@ int main()
 	 j=0;
 	 mpz_class* data = genTestData(j);
 	 size =200;
-	 startIndex = 0;
+	 startIndex = 100;
 	 
 	 for (int i = startIndex; i < size; ++i)
 	 {
+		cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
 	 	t1 = data[i];
 	  	res =factorize(t1, trials);
 	  	count = count+res;
