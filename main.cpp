@@ -193,28 +193,27 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	}
 
 	mpz_class a,b, p, product, medium, maxint;
-	maxint =  std::numeric_limits<int>::max();
+	double doubleN ,lowerBound, upperBound, bound;
+	doubleN = N.get_d();
+	lowerBound = log(doubleN);
+	upperBound = sqrt(sqrt(doubleN));
+	bound = (upperBound+lowerBound)/2;
+	bound = lowerBound;
+		cerr <<"\n upperBound" <<upperBound;
+		cerr << "\n using bound "<< bound;
+	
 	product = 1;
 	a = seed;
 	b = seed;
 
-	int maxIter;
-	//int maxInt;
-	maxIter = 100;
-
-
-	
-	//small N
-	if(N<10000000){
-		maxIter = 1;
-	}
 	
 	do{
-		for(int i =0; i<maxIter;i++){
+		for(double i =0; i<bound;i++){
 		a=(pow(a,2) - add) % N;
 		b=(pow(b,2) -add) % N;
 		b =(pow(b,2) -add) % N;
 		b =(pow(b,2) -add) % N;
+		
 		//cerr << "\n a is " << a << " b is " << b;	
 
 		if(a == b) {
@@ -455,33 +454,26 @@ int main()
 	// primes = genPrimeBase();
 	// cerr <<"\nsize of primes" << primes.size();
 	// cerr << "\nPrimes generated";
+	mpz_class t1;
 
-	// int trials;
-	// trials = 3;
+	int trials;
+	trials = 3;
 
+	int count, res, size, startIndex, j;
+	 j=0;
+	 mpz_class* data = genTestData(j);
+	 size =200;
+	 startIndex = 100;
+		 
+	 for (int i = startIndex; i < size; ++i)
+	 {
+		cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
+	 	t1 = data[i];
+	  	res =factorize(t1, trials);
+	  	count = count+res;
+	 }
 
-
-
-	 mpz_class t1,p;
-	 t1 = 90283;
-	 p = 53;
-	 cerr <<"\n Answer "<<shanksTonelli(t1,p);
-	//  int count, res, size, startIndex, j;
-	// int  j=0;
-	//  mpz_class* data = genTestData(j);
-	//  // size =200;
-	//  // startIndex = 100;
-	// quadraticSieve(data[1],primes);
-	 
-	//  for (int i = startIndex; i < size; ++i)
-	//  {
-	// 	cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
-	//  	t1 = data[i];
-	//   	res =factorize(t1, trials);
-	//   	count = count+res;
-	//  }
-
-	// cout << "\n Could factorize  " << count << " numbers out of 200 starting on number "<<startIndex <<"whith j = " << 0;
+	cout << "\n Could factorize  " << count << " numbers out of 200 starting on number "<<startIndex <<"whith j = " << 0;
 	 
 	
 	
