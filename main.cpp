@@ -420,32 +420,17 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 		} 
 	}
 	//	Factorbase done
-	
 	cerr << "\n Factorbase done, size is " << factorBase.size() << " and largest prime is " << factorBase.back();	
-	//Create polynoms
-	int nPolynoms = 60;//21474836;
-	vector<mpz_class>  polynoms(nPolynoms);
-	vector<double> polynomsLog(nPolynoms);
+	// precalculate x1,x2 and log(p) for all p's in factorbase
+	std::vector<double> logPList(factorBase.size());
+	std::vector<mpz_class> x1List(factorBase.size());
+	std::vector<mpz_class> x2List(factorBase.size());
+	
 	mpf_class floatN = N;
 	floatN = sqrt(floatN);
 	floatN = floor(floatN);
-
 	mpz_class sqrtN(floatN);
-	
-	for(int i =1; i<=nPolynoms;++i){
-
-		mpz_class qx = pow(sqrtN+i, 2) - N;
-		polynoms.at(i-1) = (qx);
-		polynomsLog.at(i-1) = (log(qx.get_d()));
-	}
-	cerr <<"\n polynoms created, size is " << polynoms.size();
-	//sieve
 	mpz_class R1, R2,p,x1,x2;
-
-	//Sieve the polynomsLog
-	//Obs ignoring p==2
-	
-
 	for(unsigned i = 1; i< factorBase.size(); ++i){
 		
 		p = factorBase.at(i);
@@ -463,11 +448,45 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 		if(x2 <=0){
 			x2 = x2+p;
 		}
-		for(unsigned long j = x1.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
-			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;		
+		logPList.at(i) = pLog;
+		x1List.at(i) = x1;
+		x2List.at(i) = x2;
+	}
+
+
+
+	// Time to enter main loop trying to create enough smooth polynoms!
+	map<mpz_class, vector<bool> > factoredPolynoms;
+	while(factoredPolynoms.size()  < 200 ){ // < (factorbase.size + 10) TODO
+	//Create polynoms
+	int nPolynoms = 21474836;
+	vector<mpz_class>  polynoms(nPolynoms);
+	vector<double> polynomsLog(nPolynoms);
+
+
+	
+	
+	for(int i =1; i<=nPolynoms;++i){
+
+		mpz_class qx = pow(sqrtN+i, 2) - N;
+		polynoms.at(i-1) = (qx);
+		polynomsLog.at(i-1) = (log(qx.get_d()));
+	}
+	cerr <<"\n polynoms created, size is " << polynoms.size();
+	
+	// - SIEVE TIME -
+	//Sieve the polynomsLog
+	//Obs ignoring p==2
+		
+	for(unsigned i = 1; i< factorBase.size(); ++i){
+		
+		p = factorBase.at(i);
+		//cerr << "\n Entering log sieve with p "<< p; 
+		for(unsigned long j = x1List.at(i).get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
+			polynomsLog.at(j-1) = polynomsLog.at(j-1) - logPList.at(i);		
 		}
-		for(unsigned long j = x2.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
-			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;
+		for(unsigned long j = x2List.at(i).get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
+			polynomsLog.at(j-1) = polynomsLog.at(j-1) - logPList.at(i);
 		}
 
 	}
@@ -479,13 +498,13 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 
 
 	// sieve out the smooth polynoms.
-	map<mpz_class, vector<bool> > factoredPolynoms;
+	
 	int count=0;
 	for(unsigned i =0; i<polynomsLog.size();++i){
 		//cerr << "\n polynomLog resten är " << polynomsLog.at(i) << " and index is " << i<<" polynom is "<< polynoms.at(i);
 		if(polynomsLog.at(i)< factorLimit){
 				count++;
-				factors = factorize(polynoms.at(i),1);
+				factors = factorize(polynoms.at(i),10);
 				vector<bool> polynomInFactorBase(factorBase.size(), false);
 				bool validFactors = false;
 				//cerr << "\n polynom is " << polynoms.at(i) << "which has factors : ";
@@ -517,12 +536,12 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 		cerr << "\n FactorBase size is " << factorBase.size();
 		cerr << "\n Number of polynoms generated " << polynoms.size();
 		cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
-
+}
 
 	// log p, t, -t (//implement shanks-tonelli)
 
 
-	return 0;
+	return 0;	
 
 }
 
@@ -535,8 +554,8 @@ int main() {
 	int maxInt = std::numeric_limits<int>::max();
 	cerr <<"\n Max int is " << maxInt;
 	// //Gen test data
-	// int j =-30;		
-	// mpz_class* data = genTestData(j);
+	int j =-30;		
+	mpz_class* data = genTestData(j);
 
 	//Gen prime base
 	cerr << "\nGenerating primes...";
@@ -582,9 +601,9 @@ int main() {
 	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
 	//TEST CODE
-	mpz_class t1;
-	t1 = 90283;
-	quadraticSieve(t1,primes);
+	// mpz_class t1;
+	// t1 = 90283;
+	quadraticSieve(data[1],primes);
 	
 
 	return (0);
