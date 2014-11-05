@@ -37,8 +37,8 @@ mpz_class pow(mpz_class base, unsigned long exp){
 		res = mpz_class(temp);
 		mpz_clear(temp);
 		return res;
-		
 }
+
 mpz_class gcd(mpz_class n1, mpz_class n2){
 	mpz_class t, u,v ;
 	if(n1>n2){
@@ -82,8 +82,6 @@ mpz_class * genTestData(int j){
 		++index;
 	}
 	return data;
-
-
 }
 
 
@@ -197,6 +195,7 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	doubleN = N.get_d();
 	lowerBound = log(doubleN);
 	upperBound = sqrt(sqrt(doubleN));
+	upperBound = sqrt(upperBound);
 	bound = (upperBound+lowerBound)/2;
 	bound = lowerBound;
 		cerr <<"\n upperBound" <<upperBound;
@@ -207,27 +206,27 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	b = seed;
 
 	
-	do{
+	do {
+		product = 1;
 		for(double i =0; i<bound;i++){
-		a=(pow(a,2) - add) % N;
-		b=(pow(b,2) -add) % N;
-		b =(pow(b,2) -add) % N;
-		b =(pow(b,2) -add) % N;
-		
-		//cerr << "\n a is " << a << " b is " << b;	
+			a=(pow(a,2) + add) % N;
+			b=(pow(b,2) + add) % N;
+			b=(pow(b,2) + add) % N;
+			//cerr << "\n a is " << a << " b is " << b;	
 
-		if(a == b) {
-			break;
+			if(a == b) {
+				break;
+			}
 
-		}
-		product = product*abs(a-b);
-		
+			product = product*abs(a-b);
+			
 		}
 		p = gcd(product,N);
 		if(p>1){
 			return p;
 		}
 		//duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
+		//cerr << "trying...";
 	}while(a!=b);
 
 
@@ -445,8 +444,7 @@ int factorize(mpz_class N, int trials){
 
 
 
-int main()
-{	
+int main() {	
 
 	// cerr << "\nGenerating primes...";
 	// vector<mpz_class> primes;
@@ -462,8 +460,8 @@ int main()
 	int count, res, size, startIndex, j;
 	 j=0;
 	 mpz_class* data = genTestData(j);
-	 size =200;
-	 startIndex = 100;
+	 size =19;
+	 startIndex = 8;
 		 
 	 for (int i = startIndex; i < size; ++i)
 	 {
