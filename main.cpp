@@ -396,8 +396,8 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 
 	cout << "\n QS trying to factorize \n" << N <<"\n";
 	vector<mpz_class> factorBase;
-	vector<mpz_class>  polynoms;
-	vector<double> polynomsLog;
+	
+	
 	
 	//Create factorbase
 	double B, doubleN, bExp;
@@ -406,7 +406,7 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	B = 3*pow(e, bExp);
 	temp = 2;
 	factorBase.push_back(temp);
-	cerr <<"\n our factorBase contains ";
+	//cerr <<"\n our factorBase contains ";
 	for(unsigned i = 1; i < primes.size(); ++i)
 	{	
 		if(primes[i]>B){
@@ -416,37 +416,36 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 		temp = modExponential(N, exponent, primes.at(i));
 		if(temp == 1){
 			factorBase.push_back(primes.at(i));
-			cerr <<"\n" << primes.at(i);
+			//cerr <<"\n" << primes.at(i);
 		} 
 	}
 	//	Factorbase done
 	
-	cerr << "\n Factobase done";	
+	cerr << "\n Factorbase done, size is " << factorBase.size() << " and largest prime is " << factorBase.back();	
 	//Create polynoms
-	int nPolynoms = factorBase.size()*10000;
+	int nPolynoms = 60;//21474836;
+	vector<mpz_class>  polynoms(nPolynoms);
+	vector<double> polynomsLog(nPolynoms);
 	mpf_class floatN = N;
 	floatN = sqrt(floatN);
 	floatN = floor(floatN);
 
 	mpz_class sqrtN(floatN);
 	
-	for(int i =1; i<nPolynoms;++i){
+	for(int i =1; i<=nPolynoms;++i){
 
 		mpz_class qx = pow(sqrtN+i, 2) - N;
-		polynoms.push_back(qx);
-		polynomsLog.push_back(log(qx.get_d()));
+		polynoms.at(i-1) = (qx);
+		polynomsLog.at(i-1) = (log(qx.get_d()));
 	}
-	cerr <<"polynoms created";
+	cerr <<"\n polynoms created, size is " << polynoms.size();
 	//sieve
 	mpz_class R1, R2,p,x1,x2;
 
-	//Handle the case p==2
-	// if(polynoms.at(0)%2 ==0){
-	// 	for(unsigned i )
-	// }
-
 	//Sieve the polynomsLog
 	//Obs ignoring p==2
+	
+
 	for(unsigned i = 1; i< factorBase.size(); ++i){
 		
 		p = factorBase.at(i);
@@ -465,7 +464,7 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 			x2 = x2+p;
 		}
 		for(unsigned long j = x1.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
-			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;
+			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;		
 		}
 		for(unsigned long j = x2.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
 			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;
@@ -475,8 +474,7 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 
 	double factorLimit = log(factorBase.back().get_d())+1;
 	vector<mpz_class> factors;
-	//factorLimit =40;
-
+	
 	cerr << "\n done with log sieving factor limit is " << factorLimit;
 
 
@@ -484,15 +482,15 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	map<mpz_class, vector<bool> > factoredPolynoms;
 	int count=0;
 	for(unsigned i =0; i<polynomsLog.size();++i){
-		//cerr << "\n polynomLog resten är " << polynomsLog.at(i);
+		//cerr << "\n polynomLog resten är " << polynomsLog.at(i) << " and index is " << i<<" polynom is "<< polynoms.at(i);
 		if(polynomsLog.at(i)< factorLimit){
 				count++;
 				factors = factorize(polynoms.at(i),1);
 				vector<bool> polynomInFactorBase(factorBase.size(), false);
 				bool validFactors = false;
-				cerr << "\n polynom is " << polynoms.at(i) << "which has factors : ";
+				//cerr << "\n polynom is " << polynoms.at(i) << "which has factors : ";
 				for (unsigned j = 0; j < factors.size(); ++j){
-					cerr << "\n" << factors.at(j);
+					//cerr << "\n" << factors.at(j);
 					validFactors = false;
 
 					for(unsigned k = 0; k < factorBase.size(); ++k){
@@ -515,8 +513,7 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 			}
 		}
 		// Factorization of polynoms complete. Time to gauss
-		cerr << "\n Number of logsmooth polynoms " << count ;
-		
+		cerr << "\n Number of logsmooth polynoms " << count ;		
 		cerr << "\n FactorBase size is " << factorBase.size();
 		cerr << "\n Number of polynoms generated " << polynoms.size();
 		cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
@@ -535,16 +532,17 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 
 
 int main() {	
-
-	//Gen test data
-	int j =-30;		
-	mpz_class* data = genTestData(j);
+	int maxInt = std::numeric_limits<int>::max();
+	cerr <<"\n Max int is " << maxInt;
+	// //Gen test data
+	// int j =-30;		
+	// mpz_class* data = genTestData(j);
 
 	//Gen prime base
 	cerr << "\nGenerating primes...";
 	vector<mpz_class> primes;	
 	primes = genPrimeBase();
-	cerr <<"\nsize of primes" << primes.size();
+	cerr <<"\nsize of primes " << primes.size();
 	cerr << "\nPrimes generated";
 	
 	
@@ -584,9 +582,9 @@ int main() {
 	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
 	//TEST CODE
-	//mpz_class t1;
-	//t1 = 90283;
-	quadraticSieve(data[1],primes);
+	mpz_class t1;
+	t1 = 90283;
+	quadraticSieve(t1,primes);
 	
 
 	return (0);
