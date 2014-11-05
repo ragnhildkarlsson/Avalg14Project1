@@ -5,6 +5,7 @@
 #include <ctime>
 #include <limits>
 #include <math.h>
+#include <map>
 
 
 using namespace std;
@@ -13,7 +14,7 @@ using namespace std;
 static const  int smallPrimes[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101};
 static const int primeLength = 26;
 static const int primeSafety = 10;
-static const int maxB = 5000000;
+static const int maxB = 500000;
 static const double e = 2.718281;
 
 
@@ -198,8 +199,8 @@ mpz_class pollard(mpz_class seed, mpz_class add, mpz_class N){
 	upperBound = sqrt(upperBound);
 	bound = (upperBound+lowerBound)/2;
 	bound = lowerBound;
-		cerr <<"\n upperBound" <<upperBound;
-		cerr << "\n using bound "<< bound;
+		//cerr <<"\n upperBound" <<upperBound;
+		//cerr << "\n using bound "<< bound;
 	
 	product = 1;
 	a = seed;
@@ -286,13 +287,13 @@ mpz_class shanksTonelli(mpz_class n,mpz_class p){
 	s=0;
 	while(q%2 == 0){
 		q= q >> 1;
-		//cout << "t is "<< t<< "\n";
+		//cerr << "q is "<< q<< "\n";
 		s=s+1;
 	}
 	//Find z = a non-quadratic residue in p
 	z=2;
 	while(legendreSymbol(z,p)!=-1){
-		n=n+1;
+		z=z+1;
 	}
 	c = modExponential(z,q,p);
 	res = modExponential(n, (q+1)/2, p);
@@ -300,8 +301,8 @@ mpz_class shanksTonelli(mpz_class n,mpz_class p){
 	m=s;
 
 	while(true){
-		cerr <<"\nInside infinity";
-		cerr << "\n t: " <<t <<" c: "<< c << " res " << res <<" m: "<< m<<" z: "<< z <<" q: "<< q;
+		//cerr <<"\nInside infinity";
+		//cerr << "\n t: " <<t <<" c: "<< c << " res " << res <<" m: "<< m<<" z: "<< z <<" q: "<< q;
 		if(t%p ==1){
 			return res;
 		}
@@ -314,13 +315,13 @@ mpz_class shanksTonelli(mpz_class n,mpz_class p){
 				break;
 			}
 		}
-		cerr <<"\n after for loop is i: "<<i <<"is m "<<m <<" is t "<< t;
+		//cerr <<"\n after for loop is i: "<<i <<"is m "<<m <<" is t "<< t;
 
 		two =2;
 
 		unsigned long expo = m.get_ui();
 		expo = expo-1-i; 
-		cerr <<"\n expo is " << expo;
+		//cerr <<"\n expo is " << expo;
 
 		b= modExponential(c, pow(two,expo) , p);
 		res= (res*b)  % p;
@@ -328,59 +329,13 @@ mpz_class shanksTonelli(mpz_class n,mpz_class p){
 		t = (t*b*b) % p;
 		c= (b*b)%p;
 		m = i;
-		cerr << "\n b: " <<b <<" c: "<< c << " res " << res <<" m: "<< m<<" t: "<< t;
+		//cerr << "\n b: " <<b <<" c: "<< c << " res " << res <<" m: "<< m<<" t: "<< t;
 		
 	}
 }
 
-int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
+std::vector<mpz_class> factorize(mpz_class N, int trials){
 	
-	mpz_class temp;
-	cout << "\n QS trying to factorize \n" << N <<"\n";
-	vector<mpz_class> factorBase;
-	vector<mpz_class> Qx;
-
-
-	//Create factorbase
-	double B, doubleN, bExp;
-	doubleN = N.get_d();
-	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
-	B = 3*pow(e, bExp);
-	temp = 2;
-	factorBase.push_back(temp);
-	
-	B = 100;
-	for (unsigned i = 1; i < primes.size(); ++i)
-	{	
-		if(primes[i]>B){
-			break;
-		}
-		unsigned long exponent = (primes.at(i).get_ui() -1)/2;
-		temp = modExponential(N, exponent, primes.at(i));
-		if(temp == 1){
-			factorBase.push_back(primes.at(i));
-		} 
-	}
-	//	Factorbase done
-
-	//Create plynominals
-	// log p, t, -t (//implement shanks-tonelli)
-
-
-
-	return 0;
-
-}
-
-
-int factorize(mpz_class N, int trials){
-	cout << "\n Trying to factorize \n" << N <<"\n";
-	
-	std::clock_t start;
-    double duration;
-
-    start = std::clock();
-
 	vector<mpz_class> factors;	
 	gmp_randclass rand (gmp_randinit_default);
 	
@@ -391,16 +346,16 @@ int factorize(mpz_class N, int trials){
 		//cerr << "\nFactor in the outer loop is now " << factor;		
 		if(isPrime(factor,10)){
 			factors.push_back(factor);
-			cerr << "\n Added factor " << factor;
+			//cerr << "\n Added factor " << factor;
 			break;
 		}
 
 		while(!primFound){
-			cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
+			//cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
 			for(int i = 0; i < trials; ++i){
 				seed = rand.get_z_range(factor-1) +1;
 				add = 1; //TODO Hard CODED
-				cerr << i << " ";
+				//cerr << i << " ";
 				//cerr << "\n Seed is \n " << seed;
 				temp = pollard(seed, add, factor);
 					if(temp > 0){
@@ -408,7 +363,7 @@ int factorize(mpz_class N, int trials){
 						//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
 						if(factor > 0 && isPrime(factor,primeSafety)){
 							factors.push_back(factor);
-							cerr << "\n Added factor " << factor;
+							//cerr << "\n Added factor " << factor;
 							primFound = true;
 							break;
 						}
@@ -421,7 +376,10 @@ int factorize(mpz_class N, int trials){
 				// Tried trial times and still failed?
 				if(temp < 0){
 					cout << "\n Factorization failed!";
-					return 0;
+					//Add -1 to end of factors to signal uncomplete factorization
+					mpz_class error = -1;
+					factors.push_back(error);
+					return factors;
 				}
 
 			}
@@ -429,51 +387,206 @@ int factorize(mpz_class N, int trials){
 			primFound = false;
 
 		}
-	cout << "\n The number of prime factors is " << factors.size(); 
-	//print factors
-	for (unsigned i = 0; i < factors.size() ; ++i)
-	{
-		cout <<"\n " << factors.at(i);
+	return factors;
 	}
-	cout << "\n";
-	duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
-    cout<<"\n Calculation time: "<< duration <<'\n';	
-	return 1;
+
+int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
+	
+	mpz_class temp;
+
+	cout << "\n QS trying to factorize \n" << N <<"\n";
+	vector<mpz_class> factorBase;
+	vector<mpz_class>  polynoms;
+	vector<double> polynomsLog;
+	
+	//Create factorbase
+	double B, doubleN, bExp;
+	doubleN = N.get_d();
+	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
+	B = 3*pow(e, bExp);
+	temp = 2;
+	factorBase.push_back(temp);
+	cerr <<"\n our factorBase contains ";
+	for(unsigned i = 1; i < primes.size(); ++i)
+	{	
+		if(primes[i]>B){
+			break;
+		}
+		unsigned long exponent = (primes.at(i).get_ui() -1)/2;
+		temp = modExponential(N, exponent, primes.at(i));
+		if(temp == 1){
+			factorBase.push_back(primes.at(i));
+			cerr <<"\n" << primes.at(i);
+		} 
+	}
+	//	Factorbase done
+	
+	cerr << "\n Factobase done";	
+	//Create polynoms
+	int nPolynoms = factorBase.size()*10000;
+	mpf_class floatN = N;
+	floatN = sqrt(floatN);
+	floatN = floor(floatN);
+
+	mpz_class sqrtN(floatN);
+	
+	for(int i =1; i<nPolynoms;++i){
+
+		mpz_class qx = pow(sqrtN+i, 2) - N;
+		polynoms.push_back(qx);
+		polynomsLog.push_back(log(qx.get_d()));
+	}
+	cerr <<"polynoms created";
+	//sieve
+	mpz_class R1, R2,p,x1,x2;
+
+	//Handle the case p==2
+	// if(polynoms.at(0)%2 ==0){
+	// 	for(unsigned i )
+	// }
+
+	//Sieve the polynomsLog
+	//Obs ignoring p==2
+	for(unsigned i = 1; i< factorBase.size(); ++i){
+		
+		p = factorBase.at(i);
+		//cerr << "\n Entering log sieve with p "<< p; 
+		
+		R1 = shanksTonelli(N, p);
+		//cerr << "\n done shanksTonelli for p " <<p;
+		R2 = p - R1;
+		x1 = (R1-sqrtN) % p;
+		x2 = (R2 -sqrtN) % p;
+		double pLog = log(p.get_d());		
+		if(x1 <=0){
+			x1 = x1+p;
+		}
+		if(x2 <=0){
+			x2 = x2+p;
+		}
+		for(unsigned long j = x1.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
+			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;
+		}
+		for(unsigned long j = x2.get_ui(); j<polynomsLog.size();j=j+p.get_ui()){
+			polynomsLog.at(j-1) = polynomsLog.at(j-1)-pLog;
+		}
 
 	}
+
+	double factorLimit = log(factorBase.back().get_d())+1;
+	vector<mpz_class> factors;
+	//factorLimit =40;
+
+	cerr << "\n done with log sieving factor limit is " << factorLimit;
+
+
+	// sieve out the smooth polynoms.
+	map<mpz_class, vector<bool> > factoredPolynoms;
+	int count=0;
+	for(unsigned i =0; i<polynomsLog.size();++i){
+		//cerr << "\n polynomLog resten är " << polynomsLog.at(i);
+		if(polynomsLog.at(i)< factorLimit){
+				count++;
+				factors = factorize(polynoms.at(i),1);
+				vector<bool> polynomInFactorBase(factorBase.size(), false);
+				bool validFactors = false;
+				cerr << "\n polynom is " << polynoms.at(i) << "which has factors : ";
+				for (unsigned j = 0; j < factors.size(); ++j){
+					cerr << "\n" << factors.at(j);
+					validFactors = false;
+
+					for(unsigned k = 0; k < factorBase.size(); ++k){
+						if(factorBase.at(k) == factors.at(j)){ // Factor in factorbase, prepare vector 
+							polynomInFactorBase.at(k) = !polynomInFactorBase.at(k); // flip value
+							validFactors = true;
+							break;
+						}
+
+					}
+
+					if(!validFactors){ // we cannot use this poly as it does not factor over the base
+						break;
+					}
+				}
+
+				if(validFactors){ // only if all factors in the poly factors over the base
+					factoredPolynoms[polynoms.at(i)] = polynomInFactorBase;
+				}
+			}
+		}
+		// Factorization of polynoms complete. Time to gauss
+		cerr << "\n Number of logsmooth polynoms " << count ;
+		
+		cerr << "\n FactorBase size is " << factorBase.size();
+		cerr << "\n Number of polynoms generated " << polynoms.size();
+		cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
+
+
+	// log p, t, -t (//implement shanks-tonelli)
+
+
+	return 0;
+
+}
+
+
+
 
 
 
 int main() {	
 
-	// cerr << "\nGenerating primes...";
-	// vector<mpz_class> primes;
+	//Gen test data
+	int j =-30;		
+	mpz_class* data = genTestData(j);
+
+	//Gen prime base
+	cerr << "\nGenerating primes...";
+	vector<mpz_class> primes;	
+	primes = genPrimeBase();
+	cerr <<"\nsize of primes" << primes.size();
+	cerr << "\nPrimes generated";
 	
-	// primes = genPrimeBase();
-	// cerr <<"\nsize of primes" << primes.size();
-	// cerr << "\nPrimes generated";
-	mpz_class t1;
+	
+	// int trials, count, stopIndex, startIndex;
+	// trials = 3;
+	// stopIndex =12;
+	// startIndex = 9;
+	// vector<mpz_class> factors;
 
-	int trials;
-	trials = 3;
+	//  for (int i = startIndex; i < stopIndex; ++i)
+	//  {
+	// 	cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
+	//  	cout << "\n Trying to factorize \n" <<data[i] <<"\n";
+	// 	std::clock_t start;
+ //    	double duration;
+ //    	start = std::clock();
 
-	int count, res, size, startIndex, j;
-	 j=0;
-	 mpz_class* data = genTestData(j);
-	 size =19;
-	 startIndex = 8;
-		 
-	 for (int i = startIndex; i < size; ++i)
-	 {
-		cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
-	 	t1 = data[i];
-	  	res =factorize(t1, trials);
-	  	count = count+res;
-	 }
 
-	cout << "\n Could factorize  " << count << " numbers out of 200 starting on number "<<startIndex <<"whith j = " << 0;
+	//   	factors = factorize(data[i], trials);
+	//   	if(factors.back() == -1){
+	//   		cerr << "\n Uncomplete factorization ";
+	//   	}
+	//   	else{
+	//   		count++;
+	//   	}
+	//   	cout << "\n The number of prime factors is " << factors.size(); 
+	// 	//print factors
+	// 	for (unsigned i = 0; i < factors.size() ; ++i)
+	// 	{
+	// 		cout <<"\n " << factors.at(i);
+	// 	}
+	// 	cout << "\n";
+	// 	duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
+	//     cout<<"\n Calculation time: "<< duration <<'\n';	
+	//  }
+
+	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
-	
+	//TEST CODE
+	//mpz_class t1;
+	//t1 = 90283;
+	quadraticSieve(data[1],primes);
 	
 
 	return (0);
