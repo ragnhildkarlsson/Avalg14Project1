@@ -514,7 +514,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 
 	}
 
-	double factorLimit = log(factorBase.back().get_d());
+	double factorLimit = log(factorBase.back().get_d())+1;
 	vector<mpz_class> factors;
 	
 	cerr << "\n done with log sieving factor limit is " << factorLimit;
@@ -701,7 +701,7 @@ int main() {
 	//TEST CODE
 	// mpz_class t1;
 	// t1 = 90283;
-	quadraticSieve(data[0],primes);
+	quadraticSieve(data[1],primes);
 	//testGetPrimeFactor();
 
 	return (0);
