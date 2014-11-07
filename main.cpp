@@ -699,9 +699,11 @@ int main() {
 	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
 	//TEST CODE
-	// mpz_class t1;
-	// t1 = 90283;
-	quadraticSieve(data[1],primes);
+	mpz_class t1;
+	t1 = "66293490818913051990436158760858275128292159574918701991";
+
+	
+	quadraticSieve(t1,primes);
 	//testGetPrimeFactor();
 
 	return (0);
