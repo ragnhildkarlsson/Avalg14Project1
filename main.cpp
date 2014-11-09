@@ -1016,11 +1016,19 @@ int main() {
 	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
 	//TEST CODE
+<<<<<<< HEAD
 	// mpz_class t1;
 	// //t1 = "66293490818913051990436158760858275128292159574918701991";
 	// t1 = 90283;
 	
 	// quadraticSieve(t1,primes);
+=======
+	mpz_class t1;
+	t1 = "66293490818913051990436158760858275128292159574918701991";
+
+	
+	quadraticSieve(t1,primes);
+>>>>>>> fd4dfa94777e3f6ca8fe4310735e9011e322ed1e
 	//testGetPrimeFactor();
 	testGenNullSpace();
 
