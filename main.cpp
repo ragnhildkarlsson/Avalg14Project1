@@ -340,7 +340,7 @@ mpz_class shanksTonelli(mpz_class n,mpz_class p){
 	}
 }
 
-mpz_class getPrimeFactor(mpz_class N, int trials, int timeOut){
+mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 	
 	gmp_randclass rand (gmp_randinit_default);
 	mpz_class seed, add, factor, temp,error;
@@ -370,86 +370,26 @@ mpz_class getPrimeFactor(mpz_class N, int trials, int timeOut){
 						break;
 					}
 				}
-			}
-			// Tried trial times and still failed?
-			if(temp < 0){
-				cout << "\n Factorization failed!";
-				//Return -1 to signal failing factorization
-				return error;
-			}
+		}
+		// Tried trial times and still failed?
+		if(temp < 0){
+			cout << "\n Factorization failed by Pollard!";
+			//Return -1 to signal failing factorization
+			return error;
+		}
 
 	}
-	cout << "\n Factorization failed!";
+	cout << "\n Factorization failed by Pollard!";
 	return error;
 
 	
 }
 
-
-std::vector<mpz_class> factorize(mpz_class N, int trials){
-	
-	vector<mpz_class> factors;	
-	gmp_randclass rand (gmp_randinit_default);
-	
-	mpz_class seed, add, factor, temp;
-	bool primFound = false;
-	while(N!=1){
-		factor = N;
-		//cerr << "\nFactor in the outer loop is now " << factor;		
-		if(isPrime(factor,10)){
-			factors.push_back(factor);
-			//cerr << "\n Added factor " << factor;
-			break;
-		}
-
-		while(!primFound){
-			//cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
-			for(int i = 0; i < trials; ++i){
-				seed = rand.get_z_range(factor-1) +1;
-				add = 1; //TODO Hard CODED
-				//cerr << i << " ";
-				//cerr << "\n Seed is \n " << seed;
-				temp = pollard(seed, add, factor, 10);
-					if(temp > 0){
-						factor = temp;
-						//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
-						if(factor > 0 && isPrime(factor,primeSafety)){
-							factors.push_back(factor);
-							//cerr << "\n Added factor " << factor;
-							primFound = true;
-							break;
-						}
-						// Compsite number found, try to factor it into a prime
-						if(factor > 0) {
-							break;
-						}
-					}
-				}
-				// Tried trial times and still failed?
-				if(temp < 0){
-					cout << "\n Factorization failed!";
-					//Add -1 to end of factors to signal uncomplete factorization
-					mpz_class error = -1;
-					factors.push_back(error);
-					return factors;
-				}
-
-			}
-			N = N / factor;
-			primFound = false;
-
-		}
-	return factors;
-	}
-
-
-
 mpz_class calculatePolynom(mpz_class N, mpz_class sqrtN, mpz_class x){
 	mpz_class qx = pow(sqrtN+x, 2) - N;
 	return qx;
 }
-string DecToBin2(int number)
-{
+string DecToBin2(int number){
     string result = "";
 
     do
@@ -470,18 +410,23 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 	map<mpz_class, bool>  pivotVariables;
 	vector<mpz_class> freeVariables;
 	mpz_class res;
-	int nSmoothPolynoms = smoothPolynoms.size();
+	unsigned nSmoothPolynoms = smoothPolynoms.size();
+	vector<mpz_class> rowsWithPivot;
+
+	//cerr << "\n entering calc non trival factor with a factorBase with size " << factorBase.size() << " smoothPolynoms size " << smoothPolynoms.size();
 	//Init all varaibles to be free
 	for(unsigned i; i<smoothPolynoms.size();++i){
 		pivotVariables[smoothPolynoms.at(i)] = false;
-
 	}
-	//mark privot variables as false;
-	for(unsigned i; i< factorBase.size();++i){
+	//cerr << "\n size of variables are " << pivotVariables.size() ;
+	//mark privot variables as not free;
+	for(unsigned i=0; i< factorBase.size();++i){
 		for (unsigned j = 0; j < smoothPolynoms.size(); ++j)
 		{
 			if(nullspace[factorBase.at(i)].at(j)){
 				//Pivot one found
+				//cerr << "\n" << smoothPolynoms.at(j) << " was found to be pivot";
+				rowsWithPivot.push_back(smoothPolynoms.at(j));
 				pivotVariables[smoothPolynoms.at(j)] = true;
 				break;
 			}
@@ -489,28 +434,31 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 	}
 	//caluclate number of free variables
 	
-	for(unsigned i; i< smoothPolynoms.size();++i){
+	for(unsigned i=0; i< smoothPolynoms.size();++i){
 		if(!pivotVariables[smoothPolynoms.at(i)]){
 			freeVariables.push_back(smoothPolynoms.at(i));
 		}
 	}
 	
-	int nFreeVariables = freeVariables.size();
+	unsigned nFreeVariables = freeVariables.size();
 	cerr << "\n The number of free variables are " << nFreeVariables;
-	int nOfSoultions = pow(2, nFreeVariables);
+	unsigned nOfSoultions = pow(2, nFreeVariables);
 	int solutionUnderTest = nOfSoultions -1;
-
+	cerr << "\n number of solutions to test is " << solutionUnderTest;
 	map<mpz_class,bool> testSolution;
 
 	//Gen and test the differen soulutions
-	for(int i =0; i< nOfSoultions;i++){
+	for(unsigned i =0; i< nOfSoultions;i++){
+		//cerr << "\n solutionUnderTest is " << solutionUnderTest;
 		//Init testsolution to all ones
-		for(int j=0;j<nSmoothPolynoms;++j){
+		for(unsigned j=0;j<nSmoothPolynoms;++j){
 			testSolution[smoothPolynoms.at(j)] = true;
 		}
 
 		//SetValue of free variables
 		string solutionString = DecToBin2(solutionUnderTest);	
+		//cerr << "\n bin representation is  " << solutionString;
+		
 		unsigned nRestingZeros = nFreeVariables - solutionString.size();
 		unsigned index = 0;
 		mpz_class freeVariable;
@@ -521,11 +469,13 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 		
 		for(unsigned i = 0; i < solutionString.size(); ++i) {
 			if(index>=freeVariables.size()){
+				//cerr << " index greater then number of free variables";
 				break;
 			}
 
-			int a = (int) solutionString[i];
-    		if(a == 0){
+			char a = solutionString[i];
+			//cerr << " a is " << a;
+    		if(a == '0'){
     			freeVariable = freeVariables.at(index);
     			testSolution[freeVariable] =false;
     		}
@@ -533,13 +483,13 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 		}
 
 
+		//cerr << "\n calc value for pivot variables ";
 		//Calculate values for pivot variables
-		int initedPivots =0;
-		while(initedPivots+nFreeVariables<=nSmoothPolynoms){
-			vector<bool> row = nullspace[factorBase.at(initedPivots)];
-			bool pivotFound;
-			bool pivotValue = false;
+		for(unsigned m =0; m<rowsWithPivot.size();++m){
+			vector<bool> row = nullspace[rowsWithPivot.at(m)];
 			mpz_class pivot;
+			bool pivotFound =false;
+			bool pivotValue;
 			for (unsigned k = 0; k < row.size(); ++k)
 			{
 				if(row.at(k)){
@@ -556,16 +506,24 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 			if(pivotFound){
 				testSolution[pivot] = pivotValue;
 			}
-
 		}
+
+
 		//Try the generated solution
+		//cerr << "\n generated solution gave the polynoms following value";
+
+		// for (unsigned k = 0; k < smoothPolynoms.size(); ++k)
+		// {
+		// 	cerr << "\n The Polynom " << smoothPolynoms.at(k) << " got value " << testSolution[smoothPolynoms.at(k)];
+		// }
+
 		mpz_class prod1 =1;
 		mpz_class rawPolynom; 
 		mpz_class prod2 =1;
 		mpz_class diff;
 		mpz_class solution;
 
-		for(int i=0; i < nSmoothPolynoms;++i){
+		for(unsigned i=0; i < nSmoothPolynoms;++i){
 			if(testSolution[smoothPolynoms.at(i)]){
 				prod1 = prod1*smoothPolynoms.at(i);
 				//calc value for sqaure 2
@@ -574,10 +532,13 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 				prod2 = prod2*rawPolynom;
 			}
 		}
+		//cerr << "\n Prod 1 is " << prod1 << " prod2 is " << prod2;
 		mpz_class sqaure;
 		sqaure= (prod1-prod2)*(prod1+prod2);
-		sqaure = sqaure%N;
+		sqaure = sqaure;
 		res = gcd(sqaure,N);
+		cerr << "\n CALCULATED RES IS " << res;
+
 		if(res!=1 &&  res!=N){
 			return res;
 		}
@@ -587,7 +548,7 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 	return res;
 }
 
-map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_class, vector<bool> > matrix, vector<mpz_class> &factorBase){
+mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, vector<mpz_class> &factorBase){
 	
 	int nPrimesInBase = factorBase.size();
 	int nSmoothPolynoms = matrix.size();
@@ -609,7 +570,7 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 		transpose[factorBase.at(i)] = newRow;
 
 	}
-	cerr <<"\n Init transpose matrix with " << transpose.size() <<"rows";
+	//cerr <<"\n Init transpose matrix with " << transpose.size() <<"rows";
 	//Transfer values
 	for (int i = 0; i <nPrimesInBase; ++i)
 	{
@@ -619,36 +580,39 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 		}
 	}
 	cerr << "\n Done Transfered values to transpose.. ";
-	cerr << "\n print transpose";
-	cerr << "\n The smooth polynoms are";
-	for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
-	{
-		cerr << " " << smoothPolynoms.at(i) << " ";
-	}
-	cerr<<"\n In transpose is number of rows " <<transpose.size();
+	//cerr << "\n print transpose";
+	//cerr << "\n The smooth polynoms are";
+	// for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
+	// {
+	// 	cerr << " " << smoothPolynoms.at(i) << " ";
+	// }
+	//cerr<<"\n In transpose is number of rows " <<transpose.size();
 	
-	for (unsigned i = 0; i < transpose.size(); ++i)
-	{	
-		cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
-		vector<bool> v = transpose[factorBase.at(i)];
-		for (unsigned j = 0; j < v.size(); ++j)
-		{
-			cerr << " " << v.at(j) << " ";
-		}
-		cerr <<"\n";
+	// for (unsigned i = 0; i < transpose.size(); ++i)
+	// {	
+	// 	//cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
+	// 	vector<bool> v = transpose[factorBase.at(i)];
+	// 	for (unsigned j = 0; j < v.size(); ++j)
+	// 	{
+	// 		//cerr << " " << v.at(j) << " ";
+	// 	}
+	// 	//cerr <<"\n";
 
-	}
+	// }
 
 
 	//Do gaus on transpose;
-	
+	cerr << "\n Start gauss";
 	mpz_class prime; 
 	mpz_class polynom;
 	//For each column 
+	cerr << "\n numberOfRows are" << nSmoothPolynoms;
+	cerr << "gaussing row ";
 	for (int j = 0; j < nSmoothPolynoms; ++j){
+		cerr << " " << j  << " ";
 		int indexFirstOccurance =-1;
 		int indexFirstLeadingOne =-1;
-		cerr << "\n try reduce comlumn for poynom " << smoothPolynoms.at(j);
+		//cerr << "\n try reduce comlumn for poynom " << smoothPolynoms.at(j);
 		//for each row
 		for (int i = 0; i < nPrimesInBase; ++i){
 
@@ -667,7 +631,7 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 				 }
 
 				 if(k==j && candidateLeadingOne && transpose[factorBase.at(i)].at(j)){
-				 	cerr << "\n First leading 1 for polynom " << smoothPolynoms.at(j) << " is on row with prime " << factorBase.at(i);
+				 	//cerr << "\n First leading 1 for polynom " << smoothPolynoms.at(j) << " is on row with prime " << factorBase.at(i);
 				 	indexFirstLeadingOne = i;
 				 }
 			}
@@ -678,14 +642,14 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 				break;
 			}
 		}
-		cerr << "\n Time to gauss";
+		//cerr << "\n Time to gauss";
 		//Do gauss if leading one found
 		if(indexFirstLeadingOne>=0){
 			//reduce rows under row with leading on
 			for (int i = indexFirstLeadingOne+1; i < nPrimesInBase; ++i)
 			{
 				prime=factorBase.at(i);
-				cerr<< "\n row tested for reduced have prime number " << prime;
+				//cerr<< "\n row tested for reduced have prime number " << prime;
 				//if row have 1 on possition j do row reduce with help of row that have first leading one 
 				if(transpose[factorBase.at(i)].at(j)){
 					for(int k=0;k<nSmoothPolynoms;k++){
@@ -693,7 +657,7 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 						transpose[prime].at(k) = xOr(transpose[factorBase.at(indexFirstLeadingOne)].at(k),transpose[prime].at(k));
 						
 					}
-					cerr<< "\n row with prime number " << prime << " was reduced";
+					//cerr<< "\n row with prime number " << prime << " was reduced";
 
 				}
 			}
@@ -714,27 +678,29 @@ map<mpz_class, vector<bool> > getGausSolutionOfTransposedPoynomMatrix( map<mpz_c
 		//Continue with the next polynoms
 
 	}
-	cerr << "\n The smooth polynoms are";
-	for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
-	{
-		cerr << " " << smoothPolynoms.at(i) << " ";
-	}
+	//cerr << "\n The smooth polynoms are";
+	// for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
+	// {
+	// 	cerr << " " << smoothPolynoms.at(i) << " ";
+	// }
 
-	cerr<<"\n In transpose is number of rows " <<transpose.size();
+	//cerr<<"\n In transpose is number of rows " <<transpose.size();
 	
-	for (unsigned i = 0; i < transpose.size(); ++i)
-	{	
-		cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
-		vector<bool> v = transpose[factorBase.at(i)];
-		for (unsigned j = 0; j < v.size(); ++j)
-		{
-			cerr << " " << v.at(j) << " ";
-		}
-		cerr <<"\n";
+	// for (unsigned i = 0; i < transpose.size(); ++i)
+	// {	
+	// 	//cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
+	// 	vector<bool> v = transpose[factorBase.at(i)];
+	// 	for (unsigned j = 0; j < v.size(); ++j)
+	// 	{
+	// 		cerr << " " << v.at(j) << " ";
+	// 	}
+	// 	cerr <<"\n";
 
-	}
+	// }
+	cerr << "\n Done gauss";
+	mpz_class res = calcNonTrivalFactor(N, transpose,smoothPolynoms,factorBase);
 
-	return transpose;
+	return res;
 }
 
 
@@ -754,11 +720,10 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 	mpz_class firstXInBatch =1;
 	mpz_class p,temp;
 
-	while(factoredPolynoms.size() < factorBase.size()+3 ){ // < (factorBase.size + 10) TODO
+	while(factoredPolynoms.size() < factorBase.size()+10 ){ 
 	//Create polynoms
-	cerr << "\n\n Trying to generate more smooth polynoms \n";
-	//int nPolynoms = 21474836;
-	int nPolynoms = 100; 
+	//cerr << "\n\n Trying to generate more smooth polynoms \n";
+	int nPolynoms = factorBase.size()*200;//: 21474836;
 	vector<double> polynomsLog(nPolynoms);
 
 	
@@ -779,7 +744,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 		}
 
 	}
-	cerr <<"\n polynoms in batch " << polynomsLog.size();
+	//cerr <<"\n polynoms in batch " << polynomsLog.size();
 	//cerr << "\nlowest log polynom " << polynomsLog.front();
 	//cerr << "\n highest log polynom " << polynomsLog.back();
 	//cerr << "\n diff between lowest and highest polynom " << polynomsLog.back() - polynomsLog.front();
@@ -813,7 +778,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 
 	}
 
-	double factorLimit = log(factorBase.back().get_d())+1;
+	double factorLimit = log(factorBase.back().get_d())+1; //TODO
 	vector<mpz_class> factors;
 	
 	cerr << "\n done with log sieving factor limit is " << factorLimit;
@@ -830,7 +795,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 			mpz_class numberToFactor = originPolynom;
 			vector<bool> polynomInFactorBase(factorBase.size(), false);	
 			while(numberToFactor!= 1){
-				temp = getPrimeFactor(numberToFactor,10,20);
+				temp = getPrimeFactorByPollard(numberToFactor,10,20);
 				bool validFactor = false;
 				//check if recived factor is in factorBase				
 				if (temp>0){
@@ -869,7 +834,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 }
 
 
-int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
+mpz_class quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	
 	mpz_class temp;
 
@@ -883,7 +848,7 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	doubleN = N.get_d();
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
 	B = 3*pow(e, bExp);
-	B=43; //TODO remove
+	//B=43; //TODO remove
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
@@ -912,8 +877,9 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	// floatN = sqrt(floatN);
 	// floatN = floor(floatN);
 	// mpz_class sqrtN(floatN);
+
 	mpz_class sqrtN = sqrt(N);
-	sqrtN = floor(sqrtN);
+	//qrtN = floor(sqrtN);
 	
 
 	mpz_class R1, R2,p,x1,x2;
@@ -938,15 +904,83 @@ int quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	cerr <<"\n number of generated smoothPolynoms is " << smoothPolynoms.size();
 	cerr <<"\n number of primes in factorBase is " << factorBase.size();
 
-	map<mpz_class, vector<bool> > nullspace = getGausSolutionOfTransposedPoynomMatrix(smoothPolynoms,factorBase);
-	return 0;
+	cerr << "\n QS start solving matrix for  " << N;
+	
+	mpz_class res = matrixToFactor(N, smoothPolynoms , factorBase);
+	return res;
 }
+
+
+std::vector<mpz_class> factorize(mpz_class N){
+	cout << "\n Trying to factorize \n" <<N <<"\n";		
+	vector<mpz_class> factors;	
+	mpz_class temp,factor;
+	int trials = 2;
+	int timeOut = 60;
+
+	//Check if N is prime
+	if(isPrime(N,10)){
+		factors.push_back(N);
+		return factors;
+	}
+	//Do pollard to find small factors
+	temp =1;
+	while(temp>0){
+		temp = getPrimeFactorByPollard(N, trials, timeOut);
+		if(temp>0){
+			factor=temp;
+			cerr <<"\n Found factor " << temp << " by pollard";
+			N = N / factor;
+			factors.push_back(factor);
+			cerr << "\n N is now " << N;
+		}
+		if(N==1){
+			return factors;
+		}
+	}
+	//check if result is 1 or peime
+	if(isPrime(N,10)){
+		factors.push_back(N);
+		return factors;
+	}
+	//try quadratic sive on rest;
+
+	//Gen prime base
+	int maxB = 5000000;
+	cerr << "\nGenerating primes...";
+	vector<mpz_class> primes;	
+	primes = genPrimeBase(maxB);
+	cerr <<"\nsize of primes " << primes.size();
+	cerr << "\nPrimes generated";
+	
+	while(N!=1){
+		factor = quadraticSieve(N,primes);
+		if(factor<0){
+			cerr <<"\n Found factor " << temp << " by quadratic sieve";
+			N = N / factor;
+			factors.push_back(factor);
+			cerr << "\n N is now" << N;
+		}
+		else{
+			cerr <<"\n  Quadratic sieve failed to factor " << N;
+			factor = -1;
+			factors.push_back(factor);
+		}
+		if(isPrime(N,10)){
+			factors.push_back(N);
+			return factors;
+		}
+	}
+	return factors;
+	}
+
+
 
 
 void testGetPrimeFactor(){
 	mpz_class res;
 	mpz_class N = 57385973589534549;
-	res = getPrimeFactor(N,10,20);
+	res = getPrimeFactorByPollard(N,10,20);
 	cerr <<"\n found factor "<< res << " in " << N;
 }
 void testGenNullSpace(){
@@ -966,71 +1000,53 @@ void testGenNullSpace(){
 
 int main() {	
 	
-	// // //Gen test data
-	// int j =0;		
-	// mpz_class* data = genTestData(j);
+	//Gen test data
+		int j =0;		
+	mpz_class* data = genTestData(j);
 
-	// //Gen prime base
-	// int maxB = 5000000;
 	
-	// cerr << "\nGenerating primes...";
-	// vector<mpz_class> primes;	
-	// primes = genPrimeBase(maxB);
-	// cerr <<"\nsize of primes " << primes.size();
-	// cerr << "\nPrimes generated";
+	int count, stopIndex, startIndex;
+	//trials = 3;
+	startIndex = 25;
+	stopIndex =28;
 	
-	
-	// int trials, count, stopIndex, startIndex;
-	// trials = 3;
-	// stopIndex =12;
-	// startIndex = 9;
-	// vector<mpz_class> factors;
+	vector<mpz_class> factors;
 
-	//  for (int i = startIndex; i < stopIndex; ++i)
-	//  {
-	// 	cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
-	//  	cout << "\n Trying to factorize \n" <<data[i] <<"\n";
-	// 	std::clock_t start;
- //    	double duration;
- //    	start = std::clock();
+	 for (int i = startIndex; i < stopIndex; ++i)
+	 {
+		cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
+	 	std::clock_t start;
+    	double duration;
+    	start = std::clock();
 
 
-	//   	factors = factorize(data[i], trials);
-	//   	if(factors.back() == -1){
-	//   		cerr << "\n Uncomplete factorization ";
-	//   	}
-	//   	else{
-	//   		count++;
-	//   	}
-	//   	cout << "\n The number of prime factors is " << factors.size(); 
-	// 	//print factors
-	// 	for (unsigned i = 0; i < factors.size() ; ++i)
-	// 	{
-	// 		cout <<"\n " << factors.at(i);
-	// 	}
-	// 	cout << "\n";
-	// 	duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
-	//     cout<<"\n Calculation time: "<< duration <<'\n';	
-	//  }
+	  	factors = factorize(data[i]);
+	  	if(factors.back() == -1){
+	  		cerr << "\n Uncomplete factorization ";
+	  	}
+	  	else{
+	  		count++;
+	  	}
+	  	cout << "\n The number of prime factors is " << factors.size(); 
+		//print factors
+		for (unsigned i = 0; i < factors.size() ; ++i)
+		{
+			cout <<"\n " << factors.at(i);
+		}
+		cout << "\n";
+		duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
+	    cout<<"\n Calculation time: "<< duration <<'\n';	
+	 }
 
-	// cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
+	cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
 	 
-	//TEST CODE
-<<<<<<< HEAD
-	// mpz_class t1;
-	// //t1 = "66293490818913051990436158760858275128292159574918701991";
-	// t1 = 90283;
-	
-	// quadraticSieve(t1,primes);
-=======
-	mpz_class t1;
-	t1 = "66293490818913051990436158760858275128292159574918701991";
+	// //TEST CODE
 
-	
-	quadraticSieve(t1,primes);
->>>>>>> fd4dfa94777e3f6ca8fe4310735e9011e322ed1e
-	//testGetPrimeFactor();
-	testGenNullSpace();
+	// // mpz_class t1;
+	// // t1 = "66293490818913051990436158760858275128292159574918701991";	
+	// // quadraticSieve(t1,primes);
+	// // //testGetPrimeFactor();
+	// testGenNullSpace();
 
 	return (0);
 }
