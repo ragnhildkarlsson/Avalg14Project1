@@ -6,6 +6,7 @@
 #include <limits>
 #include <math.h>
 #include <map>
+#include <bitset>
 
 
 using namespace std;
@@ -15,6 +16,49 @@ static const  int smallPrimes[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,5
 static const int primeLength = 26;
 static const int primeSafety = 10;
 static const double e = 2.718281;
+
+
+
+vector<unsigned long> rowXOR(vector<unsigned long> & v1, vector<unsigned long> & v2){
+	vector<unsigned long> result;
+	for(int i = 0; i < v1.size(); ++i){
+		result.push_back(v1.at(i) xor v2.at(i));
+	}
+	return result;
+}
+
+bool getBitAt(vector<unsigned long> & words, unsigned long bitIndex){
+	unsigned wordSize = 32;
+	unsigned wordIndex = 0;
+	while(bitIndex >= 32){
+		bitIndex -= 32;
+		wordIndex++;
+	}
+	unsigned long word = words.at(wordIndex);
+	return ((word >> bitIndex) & 1);
+}
+
+vector<bool> getBoolVector(vector<unsigned long> words, unsigned nBits){
+	vector<bool> result;
+	for(unsigned i = 0; i < nBits; ++i){
+		result.push_back(getBitAt(words, i));
+
+	}
+	return result;
+}
+
+bitset< 32 > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
+	bitset< 32 > result;
+	for(unsigned i = startIndex; i < stopIndex; ++i ){
+		if(bools[i]){
+			result[i] = 1;
+		} else {
+			result[i] = 0;
+		}
+	}
+	return result;
+}
+
 
 bool xOr(bool val1, bool val2){
 	if(val1 != val2){
@@ -560,7 +604,7 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 		smoothPolynoms.push_back(key);
 	}
 
-
+	cerr << "\n Starting transposing matrix ..."
 	//transpose matrix to transpose
 	map<mpz_class, vector<bool> > transpose;
 	//prepare one row for each prime in factorBase
@@ -579,7 +623,7 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 			transpose[factorBase.at(i)].at(j) = matrix[smoothPolynoms.at(j)].at(i);
 		}
 	}
-	cerr << "\n Done Transfered values to transpose.. ";
+	cerr << "\n Done Transfered values to transpose ... ";
 	//cerr << "\n print transpose";
 	//cerr << "\n The smooth polynoms are";
 	// for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
@@ -601,43 +645,65 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 	// }
 
 
+	map<mpz_class, vector<unsigned long> > transposeWithWords;
+	// Take transpose and translate each row from bool vectors to unsigned longs
+	// Each prime represents one row
+	cerr << "\nTranslating transpose into word 32 based matrix";
+	for(int i = 0; i < nPrimesInBase; ++i){
+		mpz_class p = factorBase.at(i);
+		vector<unsigned long> wordRow;
+		for (int j = 0; j < nSmoothPolynoms; j=j+32){ // enough words to cover all + a not finished word
+			bitset< 32 > bits = getBitset(transpose[p], j, j+32);
+			wordRow.push_back(bits.to_ulong());
+		}
+		transposeWithWords[p] = wordRow;
+	}
+	cerr << "\n Done with translation ...";
+
+
+
+
+
+
 	//Do gaus on transpose;
 	cerr << "\n Start gauss";
 	mpz_class prime; 
 	mpz_class polynom;
 	//For each column 
-	cerr << "\n numberOfRows are" << nSmoothPolynoms;
-	cerr << "gaussing row ";
-	for (int j = 0; j < nSmoothPolynoms; ++j){
-		cerr << " " << j  << " ";
+	cerr << "\n number of rows (primes) are" << factorBase.size();
+	cerr << "\n number of columns (polynoms) are " << nSmoothPolynoms;
+	cerr << "\n Now done with column :";
+
+	for (int j = 0; j < nSmoothPolynoms; ++j){ // for each column
+		cerr << " " << j;
+
 		int indexFirstOccurance =-1;
 		int indexFirstLeadingOne =-1;
-		//cerr << "\n try reduce comlumn for poynom " << smoothPolynoms.at(j);
+		//cerr << "\n try reduce column for polynom " << smoothPolynoms.at(j);
 		//for each row
 		for (int i = 0; i < nPrimesInBase; ++i){
 
-			//Try find first leading 1 for smoothPolynom j
+			//Try finding first leading 1 for column smoothPolynom j
 			bool candidateLeadingOne = true; //sign if this row is a valid candidate for leading 1
 			for(int k=0; k<=j;++k){
-				 //check that all numbers before transpose[i].at(j) ==0 else is this row no candidate for leading 1
-				 if( k<j && (transpose[factorBase.at(i)].at(k)==true) ){
-				 		//note the index for first occurance of 1 for smmoth polynom
+				 //check that all numbers before transpose[i].at(j) ==0 else this row is no candidate for leading 1
+				 if( k<j && (getBitAt(transposeWithWords[i], k)==true) ){
+				 		//note the index for first occurance of 1 for smooth polynom
 				 		if(indexFirstOccurance<0){
-				 			if(transpose[factorBase.at(i)].at(j)==true){
+				 			if(getBitAt(transposeWithWords[i],j)==true){
 				 				indexFirstOccurance =i;
 				 			}
 				 		}
 				 	candidateLeadingOne = false;
 				 }
-
-				 if(k==j && candidateLeadingOne && transpose[factorBase.at(i)].at(j)){
+				 if(k==j && candidateLeadingOne && getBitAt(transposeWithWords[i],j)){
 				 	//cerr << "\n First leading 1 for polynom " << smoothPolynoms.at(j) << " is on row with prime " << factorBase.at(i);
 				 	indexFirstLeadingOne = i;
 				 }
 			}
 
 			if(indexFirstLeadingOne>=0){
-				//we have fond a leading one
+				//we have found a leading one
 				//break and do gauss;
 				break;
 			}
@@ -646,36 +712,30 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 		//Do gauss if leading one found
 		if(indexFirstLeadingOne>=0){
 			//reduce rows under row with leading on
-			for (int i = indexFirstLeadingOne+1; i < nPrimesInBase; ++i)
+			for (int i = indexFirstLeadingOne+1; i < nPrimesInBase; ++i) // for each row
 			{
 				prime=factorBase.at(i);
 				//cerr<< "\n row tested for reduced have prime number " << prime;
-				//if row have 1 on possition j do row reduce with help of row that have first leading one 
-				if(transpose[factorBase.at(i)].at(j)){
-					for(int k=0;k<nSmoothPolynoms;k++){
-					polynom = smoothPolynoms.at(k);
-						transpose[prime].at(k) = xOr(transpose[factorBase.at(indexFirstLeadingOne)].at(k),transpose[prime].at(k));
-						
-					}
+				//if row have 1 on position j do row reduce with help of row that have first leading one 
+				if(getBitAt(transposeWithWords[i],j)){
+					//perform XOR between the row with leading 1 and the one which also has 1
+					transposeWithWords[i] = rowXOR(transposeWithWords[indexFirstLeadingOne], transposeWithWords[i]);
 					//cerr<< "\n row with prime number " << prime << " was reduced";
 
 				}
 			}
 			if(indexFirstOccurance>=0){
 			//reduce eventual rows over leading one
-			for (int i = indexFirstOccurance; i < indexFirstLeadingOne; ++i)
-			{
+			for (int i = indexFirstOccurance; i < indexFirstLeadingOne; ++i){
 				//if row have 1 on possition j do row reduce with help of row that have first leading one 
-				if(transpose[factorBase.at(i)].at(j)){
-					for(int k=0;k<nSmoothPolynoms;k++){
-						transpose[factorBase.at(i)].at(k) = xOr(transpose[factorBase.at(indexFirstLeadingOne)].at(k),transpose[factorBase.at(i)].at(k));
+				if(getBitAt(transposeWithWords[i],j)){
+					transposeWithWords[i] = rowXOR(transposeWithWords[indexFirstLeadingOne], transposeWithWords[i]);
 					}
 				}
 			}
-			}
 
 		}
-		//Continue with the next polynoms
+		//Continue with the next column (polynom)
 
 	}
 	//cerr << "\n The smooth polynoms are";
@@ -697,7 +757,14 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 	// 	cerr <<"\n";
 
 	// }
-	cerr << "\n Done gauss";
+	cerr << "\n Done gaussing, translating back to bool vector from word vector ... ";
+	// for each row in transposeWithWords translate its values to transpose (overwriting old values pre gauss)
+	for(int i = 0; i < factorBase.size(); ++i){
+		transpose[i] = getBoolVector(transposeWithWords[i], nSmoothPolynoms);
+	}
+	cerr << "\n Done translating back, ..."; 
+
+
 	mpz_class res = calcNonTrivalFactor(N, transpose,smoothPolynoms,factorBase);
 
 	return res;
@@ -834,7 +901,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 }
 
 
-mpz_class quadraticSieve(mpz_class N, vector<mpz_class> & primes){
+mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	
 	mpz_class temp;
 
@@ -848,7 +915,6 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	doubleN = N.get_d();
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
 	B = 3*pow(e, bExp);
-	//B=43; //TODO remove
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
@@ -864,6 +930,8 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 			//cerr <<"\n" << primes.at(i);
 		} 
 	}
+
+
 	//	Factorbase done
 	cerr << "\n Factorbase done, size is " << factorBase.size() << " and largest prime is " << factorBase.back();	
 	// precalculate x1,x2 and log(p) for all p's in factorBase
@@ -904,14 +972,14 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> & primes){
 	cerr <<"\n number of generated smoothPolynoms is " << smoothPolynoms.size();
 	cerr <<"\n number of primes in factorBase is " << factorBase.size();
 
-	cerr << "\n QS start solving matrix for  " << N;
+	cerr << "\n \n Smooth polynom generation done, starting with gaussian elimination for number \n " << N;
 	
 	mpz_class res = matrixToFactor(N, smoothPolynoms , factorBase);
 	return res;
 }
 
 
-std::vector<mpz_class> factorize(mpz_class N){
+std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	cout << "\n Trying to factorize \n" <<N <<"\n";		
 	vector<mpz_class> factors;	
 	mpz_class temp,factor;
@@ -944,14 +1012,6 @@ std::vector<mpz_class> factorize(mpz_class N){
 		return factors;
 	}
 	//try quadratic sive on rest;
-
-	//Gen prime base
-	int maxB = 5000000;
-	cerr << "\nGenerating primes...";
-	vector<mpz_class> primes;	
-	primes = genPrimeBase(maxB);
-	cerr <<"\nsize of primes " << primes.size();
-	cerr << "\nPrimes generated";
 	
 	while(N!=1){
 		factor = quadraticSieve(N,primes);
@@ -977,23 +1037,61 @@ std::vector<mpz_class> factorize(mpz_class N){
 
 
 
-void testGetPrimeFactor(){
-	mpz_class res;
-	mpz_class N = 57385973589534549;
-	res = getPrimeFactorByPollard(N,10,20);
-	cerr <<"\n found factor "<< res << " in " << N;
+// void testGetPrimeFactor(){
+// 	mpz_class res;
+// 	mpz_class N = "57385973589534549";
+// 	res = getPrimeFactorByPollard(N,10,20);
+// 	cerr <<"\n found factor "<< res << " in " << N;
+// }
+// void testGenNullSpace(){
+// 	int maxB = 50000;
+// 	cerr << "\nGenerating primes...";
+// 	vector<mpz_class> primes;	
+// 	primes = genPrimeBase(maxB);
+// 	cerr <<"\nsize of primes " << primes.size();
+// 	cerr << "\nPrimes generated";
+	
+// 	mpz_class n = 90283;
+// 	quadraticSieve(n, primes);
+	
+
+// }
+
+void testGetBinaryConversion(){
+	std::vector<bool> b;
+	b.push_back(true);
+	b.push_back(false);
+	b.push_back(false);
+	b.push_back(true);
+	b.push_back(true);
+	unsigned startIndex = 0;
+	unsigned stopIndex = b.size();
+	bitset< 32 > output;
+	output = getBitset(b, startIndex, stopIndex);
+	cout << "\n bitset printed is " << output.to_string();
+	unsigned long res = output.to_ulong();
+	cout << "\n unsigned long is printed " << res;
+	cout << "\n bit number 0 is " << ((res >> 0) & 1); 
+	cout << "\n bit number 1 is " << ((res >> 1) & 1); 
+	cout << "\n bit number 2 is " << ((res >> 2) & 1); 
+	cout << "\n bit number 3 is " << ((res >> 3) & 1); 
+	cout << "\n bit number 4 is " << ((res >> 4) & 1); 
+
+
 }
-void testGenNullSpace(){
-	int maxB = 50000;
-	cerr << "\nGenerating primes...";
-	vector<mpz_class> primes;	
-	primes = genPrimeBase(maxB);
-	cerr <<"\nsize of primes " << primes.size();
-	cerr << "\nPrimes generated";
-	
-	mpz_class n = 90283;
-	quadraticSieve(n, primes);
-	
+
+void testGetBitAt(){
+	bitset< 32 > b1(14);
+	bitset< 32 > b2(1025);
+	cout << "\n First word is " << b1.to_string();
+	cout << "\n Second word is " << b2.to_string();
+	vector<unsigned long> v;
+	v.push_back(b1.to_ulong());
+	v.push_back(b2.to_ulong());
+	cout << "\n bit with index 0 is " << getBitAt(v, 0);
+	cout << "\n bit with index 1 is " << getBitAt(v, 1);
+	cout << "\n bit with index 32 is " << getBitAt(v, 32);
+	cout << "\n bit with index 33 is " << getBitAt(v, 33);
 
 }
 
@@ -1003,6 +1101,20 @@ int main() {
 	//Gen test data
 		int j =0;		
 	mpz_class* data = genTestData(j);
+
+	// Test binary conversion methods:
+	//testGetBinaryConversion();
+	//testGetBitAt();
+
+
+
+	//Gen prime base
+	int maxB = 5000000; 
+	cerr << "\nGenerating primes...";
+	vector<mpz_class> primes;	
+	primes = genPrimeBase(maxB);
+	cerr <<"\nsize of primes " << primes.size();
+	cerr << "\nPrimes generated";
 
 	
 	int count, stopIndex, startIndex;
@@ -1020,7 +1132,7 @@ int main() {
     	start = std::clock();
 
 
-	  	factors = factorize(data[i]);
+	  	factors = factorize(data[i], primes);
 	  	if(factors.back() == -1){
 	  		cerr << "\n Uncomplete factorization ";
 	  	}
@@ -1042,10 +1154,10 @@ int main() {
 	 
 	// //TEST CODE
 
-	// // mpz_class t1;
-	// // t1 = "66293490818913051990436158760858275128292159574918701991";	
-	// // quadraticSieve(t1,primes);
-	// // //testGetPrimeFactor();
+	//mpz_class t1;
+	//t1 = "90283";	
+	//quadraticSieve(data[0],primes);
+	//testGetPrimeFactor();
 	// testGenNullSpace();
 
 	return (0);
