@@ -28,6 +28,7 @@ vector<unsigned long> rowXOR(vector<unsigned long> & v1, vector<unsigned long> &
 }
 
 bool getBitAt(vector<unsigned long> & words, unsigned long bitIndex){
+	//cerr << "\n Inside getBitAt with length of words" << words.size() << " and bitIndex " << bitIndex; 
 	unsigned wordSize = 32;
 	unsigned wordIndex = 0;
 	while(bitIndex >= 32){
@@ -59,15 +60,6 @@ bitset< 32 > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopI
 	return result;
 }
 
-
-bool xOr(bool val1, bool val2){
-	if(val1 != val2){
-		return true;
-	}
-	else{
-		return false;	
-	} 
-}
 
 mpz_class pow(mpz_class base, unsigned long exp){
 		mpz_class res;
@@ -604,7 +596,7 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 		smoothPolynoms.push_back(key);
 	}
 
-	cerr << "\n Starting transposing matrix ..."
+	cerr << "\n Starting to transpose matrix ...";
 	//transpose matrix to transpose
 	map<mpz_class, vector<bool> > transpose;
 	//prepare one row for each prime in factorBase
@@ -624,41 +616,21 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 		}
 	}
 	cerr << "\n Done Transfered values to transpose ... ";
-	//cerr << "\n print transpose";
-	//cerr << "\n The smooth polynoms are";
-	// for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
-	// {
-	// 	cerr << " " << smoothPolynoms.at(i) << " ";
-	// }
-	//cerr<<"\n In transpose is number of rows " <<transpose.size();
-	
-	// for (unsigned i = 0; i < transpose.size(); ++i)
-	// {	
-	// 	//cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
-	// 	vector<bool> v = transpose[factorBase.at(i)];
-	// 	for (unsigned j = 0; j < v.size(); ++j)
-	// 	{
-	// 		//cerr << " " << v.at(j) << " ";
-	// 	}
-	// 	//cerr <<"\n";
-
-	// }
-
-
 	map<mpz_class, vector<unsigned long> > transposeWithWords;
 	// Take transpose and translate each row from bool vectors to unsigned longs
 	// Each prime represents one row
-	cerr << "\nTranslating transpose into word 32 based matrix";
+	cerr << "\nTranslating transpose into word 32 based matrix, with nSmoothPolynoms = " << nSmoothPolynoms;
 	for(int i = 0; i < nPrimesInBase; ++i){
-		mpz_class p = factorBase.at(i);
 		vector<unsigned long> wordRow;
 		for (int j = 0; j < nSmoothPolynoms; j=j+32){ // enough words to cover all + a not finished word
-			bitset< 32 > bits = getBitset(transpose[p], j, j+32);
+			bitset< 32 > bits = getBitset(transpose[i], j, j+32);
 			wordRow.push_back(bits.to_ulong());
 		}
-		transposeWithWords[p] = wordRow;
+		transposeWithWords[i] = wordRow;
 	}
 	cerr << "\n Done with translation ...";
+
+
 
 
 
@@ -670,12 +642,16 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 	mpz_class prime; 
 	mpz_class polynom;
 	//For each column 
-	cerr << "\n number of rows (primes) are" << factorBase.size();
+	cerr << "\n number of rows (primes) are " << factorBase.size();
+	cerr << "\n number of rows in transposeWithWords " << transposeWithWords.size();
 	cerr << "\n number of columns (polynoms) are " << nSmoothPolynoms;
 	cerr << "\n Now done with column :";
 
 	for (int j = 0; j < nSmoothPolynoms; ++j){ // for each column
+
+		if(j % 100 == 0){
 		cerr << " " << j;
+		}
 
 		int indexFirstOccurance =-1;
 		int indexFirstLeadingOne =-1;
@@ -714,7 +690,6 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 			//reduce rows under row with leading on
 			for (int i = indexFirstLeadingOne+1; i < nPrimesInBase; ++i) // for each row
 			{
-				prime=factorBase.at(i);
 				//cerr<< "\n row tested for reduced have prime number " << prime;
 				//if row have 1 on position j do row reduce with help of row that have first leading one 
 				if(getBitAt(transposeWithWords[i],j)){
@@ -738,25 +713,6 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 		//Continue with the next column (polynom)
 
 	}
-	//cerr << "\n The smooth polynoms are";
-	// for (unsigned i = 0; i < smoothPolynoms.size(); ++i)
-	// {
-	// 	cerr << " " << smoothPolynoms.at(i) << " ";
-	// }
-
-	//cerr<<"\n In transpose is number of rows " <<transpose.size();
-	
-	// for (unsigned i = 0; i < transpose.size(); ++i)
-	// {	
-	// 	//cerr << "\n prime p "<< factorBase.at(i) << "have bool vector";
-	// 	vector<bool> v = transpose[factorBase.at(i)];
-	// 	for (unsigned j = 0; j < v.size(); ++j)
-	// 	{
-	// 		cerr << " " << v.at(j) << " ";
-	// 	}
-	// 	cerr <<"\n";
-
-	// }
 	cerr << "\n Done gaussing, translating back to bool vector from word vector ... ";
 	// for each row in transposeWithWords translate its values to transpose (overwriting old values pre gauss)
 	for(int i = 0; i < factorBase.size(); ++i){
@@ -1109,7 +1065,7 @@ int main() {
 
 
 	//Gen prime base
-	int maxB = 5000000; 
+	int maxB = 5000000; //TODO add 2 0
 	cerr << "\nGenerating primes...";
 	vector<mpz_class> primes;	
 	primes = genPrimeBase(maxB);
@@ -1156,7 +1112,7 @@ int main() {
 
 	//mpz_class t1;
 	//t1 = "90283";	
-	//quadraticSieve(data[0],primes);
+	//quadraticSieve(t1,primes);
 	//testGetPrimeFactor();
 	// testGenNullSpace();
 
