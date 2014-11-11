@@ -29,10 +29,10 @@ vector<unsigned long> rowXOR(vector<unsigned long> & v1, vector<unsigned long> &
 
 bool getBitAt(vector<unsigned long> & words, unsigned long bitIndex){
 	//cerr << "\n Inside getBitAt with length of words" << words.size() << " and bitIndex " << bitIndex; 
-	unsigned wordSize = 32;
+	unsigned wordSize = 64;
 	unsigned wordIndex = 0;
-	while(bitIndex >= 32){
-		bitIndex -= 32;
+	while(bitIndex >= 64){
+		bitIndex -= 64;
 		wordIndex++;
 	}
 	unsigned long word = words.at(wordIndex);
@@ -48,8 +48,8 @@ vector<bool> getBoolVector(vector<unsigned long> words, unsigned nBits){
 	return result;
 }
 
-bitset< 32 > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
-	bitset< 32 > result;
+bitset< 64 > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
+	bitset< 64 > result;
 	for(unsigned i = startIndex; i < stopIndex; ++i ){
 		if(bools[i]){
 			result[i] = 1;
@@ -619,11 +619,11 @@ mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, ve
 	map<mpz_class, vector<unsigned long> > transposeWithWords;
 	// Take transpose and translate each row from bool vectors to unsigned longs
 	// Each prime represents one row
-	cerr << "\nTranslating transpose into word 32 based matrix, with nSmoothPolynoms = " << nSmoothPolynoms;
+	cerr << "\nTranslating transpose into word 64 based matrix, with nSmoothPolynoms = " << nSmoothPolynoms;
 	for(int i = 0; i < nPrimesInBase; ++i){
 		vector<unsigned long> wordRow;
-		for (int j = 0; j < nSmoothPolynoms; j=j+32){ // enough words to cover all + a not finished word
-			bitset< 32 > bits = getBitset(transpose[i], j, j+32);
+		for (int j = 0; j < nSmoothPolynoms; j=j+64){ // enough words to cover all + a not finished word
+			bitset< 64 > bits = getBitset(transpose[i], j, j+64);
 			wordRow.push_back(bits.to_ulong());
 		}
 		transposeWithWords[i] = wordRow;
@@ -1022,7 +1022,7 @@ void testGetBinaryConversion(){
 	b.push_back(true);
 	unsigned startIndex = 0;
 	unsigned stopIndex = b.size();
-	bitset< 32 > output;
+	bitset< 64 > output;
 	output = getBitset(b, startIndex, stopIndex);
 	cout << "\n bitset printed is " << output.to_string();
 	unsigned long res = output.to_ulong();
@@ -1037,17 +1037,17 @@ void testGetBinaryConversion(){
 }
 
 void testGetBitAt(){
-	bitset< 32 > b1(14);
-	bitset< 32 > b2(1025);
-	cout << "\n First word is " << b1.to_string();
+	bitset< 64 > b1(14);
+	bitset< 64 > b2(1025);
+	cerr << "\n First word is " << b1.to_string();
 	cout << "\n Second word is " << b2.to_string();
 	vector<unsigned long> v;
 	v.push_back(b1.to_ulong());
 	v.push_back(b2.to_ulong());
-	cout << "\n bit with index 0 is " << getBitAt(v, 0);
-	cout << "\n bit with index 1 is " << getBitAt(v, 1);
-	cout << "\n bit with index 32 is " << getBitAt(v, 32);
-	cout << "\n bit with index 33 is " << getBitAt(v, 33);
+	cerr << "\n bit with index 0 is " << getBitAt(v, 0);
+	cerr << "\n bit with index 1 is " << getBitAt(v, 1);
+	cerr << "\n bit with index 64 is " << getBitAt(v, 64);
+	cerr << "\n bit with index 65 is " << getBitAt(v, 65);
 
 }
 
@@ -1057,6 +1057,8 @@ void testUnsignedLongSize(){
 
 int main() {	
 	
+	testGetBitAt();
+
 	//Gen test data
 		int j =0;		
 	mpz_class* data = genTestData(j);
