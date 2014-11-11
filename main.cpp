@@ -1051,6 +1051,9 @@ void testGetBitAt(){
 
 }
 
+void testUnsignedLongSize(){
+	cerr << "size of unsigned long is " << sizeof(unsigned long)*8;
+}
 
 int main() {	
 	
