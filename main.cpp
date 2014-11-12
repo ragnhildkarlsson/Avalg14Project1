@@ -874,7 +874,7 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
 	B = 2*pow(e, bExp);
 	//TODO
-	B=43;
+	//B=43;
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
