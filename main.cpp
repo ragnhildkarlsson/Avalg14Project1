@@ -478,13 +478,13 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 	
 	unsigned nFreeVariables = freeVariables.size();
 	cerr << "\n The number of free variables are " << nFreeVariables;
-	unsigned nOfSoultions = pow(2, nFreeVariables);
-	int solutionUnderTest = nOfSoultions -1;
+	mpz_class nOfSoultions = pow(2, nFreeVariables);
+	mpz_class solutionUnderTest = nOfSoultions -1;
 	cerr << "\n number of solutions to test is " << solutionUnderTest;
 	map<mpz_class,bool> testSolution;
-
+	
 	//Gen and test the differen soulutions
-	for(unsigned i =0; i< nOfSoultions;i++){
+	while(solutionUnderTest>0){
 		//cerr << "\n solutionUnderTest is " << solutionUnderTest;
 		//Init testsolution to all ones
 		for(unsigned j=0;j<nSmoothPolynoms;++j){
@@ -492,8 +492,9 @@ mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullsp
 		}
 
 		//SetValue of free variables
-		string solutionString = DecToBin2(solutionUnderTest);	
-		//cerr << "\n bin representation is  " << solutionString;
+		//string solutionString = DecToBin2(solutionUnderTest);
+		string solutionString =  solutionUnderTest.get_str(2);	
+		cerr << "\n bin representation is  " << solutionString;
 		
 		unsigned nRestingZeros = nFreeVariables - solutionString.size();
 		unsigned index = 0;
@@ -743,7 +744,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 	mpz_class firstXInBatch =1;
 	mpz_class p,temp;
 
-	while(factoredPolynoms.size() < factorBase.size()+10 ){ 
+	while(factoredPolynoms.size() < factorBase.size()+10){
 	//Create polynoms
 	//cerr << "\n\n Trying to generate more smooth polynoms \n";
 	int nPolynoms = factorBase.size()*200;//: 21474836;
@@ -802,6 +803,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 	}
 
 	double factorLimit = log(factorBase.back().get_d())+1; //TODO
+	
 	vector<mpz_class> factors;
 	
 	cerr << "\n done with log sieving factor limit is " << factorLimit;
@@ -870,7 +872,9 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	double B, doubleN, bExp;
 	doubleN = N.get_d();
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
-	B = 3*pow(e, bExp);
+	B = 2*pow(e, bExp);
+	//TODO
+	B=43;
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
@@ -990,7 +994,20 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	return factors;
 	}
 
+	void testQuadraticSieveOn90283() {
+	int maxB = 50000;
+	cerr << "\nGenerating primes...";
+	vector<mpz_class> primes;	
+	primes = genPrimeBase(maxB);
+	cerr <<"\nsize of primes " << primes.size();
+	cerr << "\nPrimes generated";
+	
+	mpz_class n = 90283;
+	mpz_class res;
+	res = quadraticSieve(n, primes);
+	cerr <<"\n QS found factor " << res << " in " << n;
 
+	}
 
 
 // void testGetPrimeFactor(){
@@ -1056,6 +1073,8 @@ void testUnsignedLongSize(){
 }
 
 int main() {	
+
+	testQuadraticSieveOn90283();
 	
 	testGetBitAt();
 
