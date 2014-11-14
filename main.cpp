@@ -20,38 +20,7 @@ static const double e = 2.718281;
 static const int bitsOfUL = sizeof(unsigned long) *8;
 static const int bytesOfUL = sizeof(unsigned long);
 
-
-
-vector<unsigned long> rowXOR(vector<unsigned long> & v1, vector<unsigned long> & v2){
-	vector<unsigned long> result;
-	for(int i = 0; i < v1.size(); ++i){
-		result.push_back(v1.at(i) xor v2.at(i));
-	}
-	return result;
-}
-
-bool getBitAt(vector<unsigned long> & words, unsigned long bitIndex){
-	//cerr << "\n Inside getBitAt with length of words" << words.size() << " and bitIndex " << bitIndex; 
-	unsigned wordSize = 64;
-	unsigned wordIndex = 0;
-	while(bitIndex >= 64){
-		bitIndex -= 64;
-		wordIndex++;
-	}
-	unsigned long word = words.at(wordIndex);
-	return ((word >> bitIndex) & 1);
-}
-
-vector<bool> getBoolVector(vector<unsigned long> words, unsigned nBits){
-	vector<bool> result;
-	for(unsigned i = 0; i < nBits; ++i){
-		result.push_back(getBitAt(words, i));
-
-	}
-	return result;
-}
-
-bitset< bitsOfUL > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
+bitset<bitsOfUL > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
 	bitset< bitsOfUL > result;
 	for(unsigned i = startIndex; i < stopIndex; ++i ){
 		if(bools[i]){
@@ -62,6 +31,7 @@ bitset< bitsOfUL > getBitset(vector<bool> & bools, unsigned startIndex, unsigned
 	}
 	return result;
 }
+
 
 mpz_class pow(mpz_class base, unsigned long exp){
 		mpz_class res;
@@ -427,222 +397,148 @@ mpz_class calculatePolynom(mpz_class N, mpz_class sqrtN, mpz_class x){
 	mpz_class qx = pow(sqrtN+x, 2) - N;
 	return qx;
 }
-string DecToBin2(int number){
-    string result = "";
-
-    do
-    {
-        if ( (number & 1) == 0 )
-            result += "0";
-        else
-            result += "1";
-
-        number >>= 1;
-    } while ( number );
-
-    reverse(result.begin(), result.end());
-    return result;
-}
-
-mpz_class calcNonTrivalFactor(mpz_class N, map<mpz_class, vector<bool> > &nullspace, vector<mpz_class> &smoothPolynoms, vector<mpz_class> &factorBase){
-	map<mpz_class, bool>  pivotVariables;
-	vector<mpz_class> freeVariables;
-	mpz_class res;
-	unsigned nSmoothPolynoms = smoothPolynoms.size();
-	vector<mpz_class> rowsWithPivot;
-
-	//cerr << "\n entering calc non trival factor with a factorBase with size " << factorBase.size() << " smoothPolynoms size " << smoothPolynoms.size();
-	//Init all varaibles to be free
-	for(unsigned i; i<smoothPolynoms.size();++i){
-		pivotVariables[smoothPolynoms.at(i)] = false;
-	}
-	//cerr << "\n size of variables are " << pivotVariables.size() ;
-	//mark privot variables as not free;
-	for(unsigned i=0; i< factorBase.size();++i){
-		for (unsigned j = 0; j < smoothPolynoms.size(); ++j)
-		{
-			if(nullspace[factorBase.at(i)].at(j)){
-				//Pivot one found
-				//cerr << "\n" << smoothPolynoms.at(j) << " was found to be pivot";
-				rowsWithPivot.push_back(smoothPolynoms.at(j));
-				pivotVariables[smoothPolynoms.at(j)] = true;
-				break;
-			}
-		}
-	}
-	//caluclate number of free variables
-	
-	for(unsigned i=0; i< smoothPolynoms.size();++i){
-		if(!pivotVariables[smoothPolynoms.at(i)]){
-			freeVariables.push_back(smoothPolynoms.at(i));
-		}
-	}
-	
-	unsigned nFreeVariables = freeVariables.size();
-	cerr << "\n The number of free variables are " << nFreeVariables;
-	mpz_class nOfSoultions = pow(2, nFreeVariables);
-	mpz_class solutionUnderTest = nOfSoultions -1;
-	cerr << "\n number of solutions to test is " << solutionUnderTest;
-	map<mpz_class,bool> testSolution;
-	
-	//Gen and test the differen soulutions
-	while(solutionUnderTest>0){
-		//cerr << "\n solutionUnderTest is " << solutionUnderTest;
-		//Init testsolution to all ones
-		for(unsigned j=0;j<nSmoothPolynoms;++j){
-			testSolution[smoothPolynoms.at(j)] = true;
-		}
-
-		//SetValue of free variables
-		//string solutionString = DecToBin2(solutionUnderTest);
-		string solutionString =  solutionUnderTest.get_str(2);	
-		//cerr << "\n bin representation is  " << solutionString;
-		
-		unsigned nRestingZeros = nFreeVariables - solutionString.size();
-		unsigned index = 0;
-		mpz_class freeVariable;
-		for(index= 0; index< nRestingZeros;index++){
-				freeVariable = freeVariables.at(index);
-				testSolution[freeVariable] =false;
-		}
-		
-		for(unsigned i = 0; i < solutionString.size(); ++i) {
-			if(index>=freeVariables.size()){
-				//cerr << " index greater then number of free variables";
-				break;
-			}
-
-			char a = solutionString[i];
-			//cerr << " a is " << a;
-    		if(a == '0'){
-    			freeVariable = freeVariables.at(index);
-    			testSolution[freeVariable] =false;
-    		}
-    		index++;    		
-		}
-
-
-		//cerr << "\n calc value for pivot variables ";
-		//Calculate values for pivot variables
-		for(unsigned m =0; m<rowsWithPivot.size();++m){
-			vector<bool> row = nullspace[rowsWithPivot.at(m)];
-			mpz_class pivot;
-			bool pivotFound =false;
-			bool pivotValue;
-			for (unsigned k = 0; k < row.size(); ++k)
-			{
-				if(row.at(k)){
-					if(!pivotFound){
-						pivotFound = true;
-						pivot = smoothPolynoms.at(k);
-					}
-					else{
-						pivotValue = !pivotValue;
-					}
-
-				}
-			}
-			if(pivotFound){
-				testSolution[pivot] = pivotValue;
-			}
-		}
-
-
-		//Try the generated solution
-		//cerr << "\n generated solution gave the polynoms following value";
-
-		// for (unsigned k = 0; k < smoothPolynoms.size(); ++k)
-		// {
-		// 	cerr << "\n The Polynom " << smoothPolynoms.at(k) << " got value " << testSolution[smoothPolynoms.at(k)];
-		// }
-
-		mpz_class prod1 =1;
-		mpz_class rawPolynom; 
-		mpz_class prod2 =1;
-		mpz_class diff;
-		mpz_class solution;
-
-		for(unsigned i=0; i < nSmoothPolynoms;++i){
-			if(testSolution[smoothPolynoms.at(i)]){
-				prod1 = prod1*smoothPolynoms.at(i);
-				//calc value for sqaure 2
-				rawPolynom = smoothPolynoms.at(i)+N;
-				rawPolynom = sqrt(rawPolynom);
-				prod2 = prod2*rawPolynom;
-			}
-		}
-		//cerr << "\n Prod 1 is " << prod1 << " prod2 is " << prod2;
-		mpz_class sqaure;
-		sqaure= (prod1-prod2)*(prod1+prod2);
-		sqaure = sqaure;
-		res = gcd(sqaure,N);
-		cerr << "\n CALCULATED RES IS " << res;
-
-		if(res!=1 &&  res!=N){
-			return res;
-		}
-		solutionUnderTest = solutionUnderTest-1;
-	}
-	res = -1;
-	return res;
-}
-
 
 
 class BitMatrix
 {
 	
 	public:
-		BitMatrix(map<mpz_class,std::vector<bool> > &rawMatrix, int sizeOfFactorBase);
+		BitMatrix(mpz_class numberToFactor, map<mpz_class,std::vector<bool> > &rawMatrix, int sizeOfFactorBase);
 		
 		~BitMatrix();
 		void printPrimeMatrix();
 		void printPolyMatrix();
+		void printZeros();
+		mpz_class getFactorByQS();
+		void gaussBitMatrix();
+		void setZeros();
 
 	private:
+		mpz_class N;
 		int nPrimesInBase;
-		unsigned long **bitMatrix;
+		bitset<bitsOfUL> **bitMatrix;
 		int nSmoothPolynoms;
 		int nPrimeCols;
 		int nPolyCols;
 		int nCols;
-
-
+		vector<mpz_class> smoothPolynoms;
+		vector<int> zeros;
 };
 
-//GaussMethod
+mpz_class BitMatrix::getFactorByQS(){
+	printPrimeMatrix();
+	gaussBitMatrix();
+	cerr << "\n  After gauss";
+	printPrimeMatrix();
+	printPolyMatrix();
+	setZeros();
+	mpz_class res=-1;
+	mpz_class square;
+	vector<mpz_class> polynomsInSolution;
+	mpz_class prod1 =1;
+	mpz_class rawPolynom; 
+	mpz_class prod2 =1;
+	mpz_class diff;
 
-void BitMatrix::gaussBitMatrix(){
-	//Create linked list with all row index
-	list<int> llPolynoms();
-	for (int i = 0; i < nSmoothPolynoms; ++i)
-	{
-		llPolynoms.push_back(i);
-	}
-	int 
-	while(llPolynoms.size()>0){
-		bitToGaus = 
-
-		for(int i=0; i < llPolynoms.size();++i){
-
-
-
+	for(unsigned i=0; i<zeros.size();++i){
+		int col = nPrimeCols;
+		prod1 =1;
+		prod2 =1;
+		//find polynoms in soulution		
+		for(int j=0;j<nSmoothPolynoms;++j){
+			if(j%bitsOfUL){
+				col++;
+			}
+			if(bitMatrix[zeros.at(i)][col].test(j%bitsOfUL)){
+				polynomsInSolution.push_back(smoothPolynoms.at(j));
+			}			
+		}
+		//try soulution
+		for(unsigned j=0;j<polynomsInSolution.size();++j){
+			prod1 = prod1*polynomsInSolution.at(j);
+			rawPolynom = polynomsInSolution.at(j)+N;
+			rawPolynom = sqrt(rawPolynom);
+			prod2 = prod2*rawPolynom;
+		}
+		square = (prod1-prod2)*(prod1+prod2);
+		res = gcd(square,N);
+		if(res!=1 &&  res!=N){
+			cerr << "\n CALCULATED RES IS " << res;
+			return res;
 		}
 
 	}
-
-
+	cerr << "\n FACTORIZE FAILED BY QS ";
+	res = -1; 
+	return res;
 }
+
+void BitMatrix::setZeros(){
+	
+	bool foundZero;
+	for(int i =0;i < nSmoothPolynoms; i++){
+		foundZero=true;
+		int nBitsSet =0;
+		for(int j=0;j<nPrimeCols;j++){
+			if(bitMatrix[i][j].count()>0){
+				foundZero = false;
+				break;
+			}				
+		}
+		if(foundZero){
+			zeros.push_back(i);
+		}
+	}
+}
+//GaussMethod
+
+void BitMatrix::gaussBitMatrix(){
+	
+	bool possibleLeadingOneRows[nSmoothPolynoms];
+
+	//Create linked list with all row index
+	for (int i = 0; i < nSmoothPolynoms; ++i)
+		possibleLeadingOneRows[i] = true;	
+	
+	int indexLeadingOne=0;
+	int colToGauss=0;
+	int bitToGauss;
+	//Find leading one
+	for(int i=0; i<nPrimesInBase;i++){
+		bitToGauss = i ;
+		bool foundLeadingOne=false;
+		
+		indexLeadingOne =0;
+
+		if(bitToGauss>0&&bitToGauss%bitsOfUL==0)
+			colToGauss++;
+		//Find leading one
+		for(int j=0;j<nSmoothPolynoms;++j){
+			if(possibleLeadingOneRows[indexLeadingOne] && bitMatrix[indexLeadingOne][colToGauss].test(bitToGauss%bitsOfUL)){
+				possibleLeadingOneRows[indexLeadingOne] =false;
+				foundLeadingOne = true;
+				break;
+			}
+			indexLeadingOne++;
+		}
+		if(foundLeadingOne)
+			for(int j=0;j<nSmoothPolynoms;++j)
+				if(j!=indexLeadingOne)
+					if(bitMatrix[j][colToGauss].test(bitToGauss%bitsOfUL))
+						for(int k= colToGauss;k<nCols;k++)
+							bitMatrix[j][k] ^= bitMatrix[indexLeadingOne][k];							
+
+	}	 
+}
+
 //Print methods
 void BitMatrix::printPrimeMatrix(){
 	cerr <<"\n Print Prime matrix \n";
 	for (int i = 0; i < nSmoothPolynoms; ++i)
 	{
 		cerr <<"\n Row " << i << ": ";
-		for(int j=0;j<nPrimeCols;++j){
-			bitset<bitsOfUL> printBitSet(bitMatrix[i][j]);
-			cerr << printBitSet.to_string() << " ";
-		}
+		for(int j=0;j<nPrimeCols;++j)
+			cerr << bitMatrix[i][j].to_string() << " ";
 	}
 
 }
@@ -652,17 +548,22 @@ void BitMatrix::printPolyMatrix(){
 	for (int i = 0; i < nSmoothPolynoms; ++i)
 	{
 		cerr <<"\n Row " << i << ": ";
-		for(int j=nPrimeCols;j<nCols;++j){
-			bitset<bitsOfUL> printBitSet(bitMatrix[i][j]);
-			cerr << printBitSet.to_string() << " ";
-		}
+		for(int j=nPrimeCols;j<nCols;++j)
+			cerr << bitMatrix[i][j].to_string() << " ";
 	}
 
+}
+void BitMatrix::printZeros(){
+	cerr <<"\n Row with zeros have index";		
+	for(unsigned i=0;i<zeros.size();++i){
+		cerr <<  zeros.at(i) << " ";
+	}
 }
 
 
 //Constructor
-BitMatrix::BitMatrix(map<mpz_class,std::vector<bool> > &rawMatrix,int sizeOfFactorBase){
+BitMatrix::BitMatrix(mpz_class numberToFactor, map<mpz_class,std::vector<bool> > &rawMatrix,int sizeOfFactorBase){
+	N=numberToFactor;
 	nPrimesInBase = sizeOfFactorBase;
 	nSmoothPolynoms = rawMatrix.size();
 	nPrimeCols = ceil((double) nPrimesInBase/(double) bitsOfUL);
@@ -672,18 +573,16 @@ BitMatrix::BitMatrix(map<mpz_class,std::vector<bool> > &rawMatrix,int sizeOfFact
 	//cerr << "\n Bits of ul is " << bitsOfUL;
 	//cerr << "\n nPrimesInBase is " << nPrimesInBase << " nSmoothPolynoms: " << nSmoothPolynoms << " nPrimeCols " << nPrimeCols  <<" nPolyCols "<< nPolyCols <<"\n"; 
 	//Declare bitMatrix
-	bitMatrix = new unsigned long *[nSmoothPolynoms];
+	bitMatrix = new bitset<bitsOfUL> *[nSmoothPolynoms];
 
 	for (int i = 0; i < nSmoothPolynoms; ++i)
-		bitMatrix[i] = new unsigned long[nCols];
+		bitMatrix[i] = new bitset<bitsOfUL>[nCols];
 
 	//fill with data
-	vector<mpz_class> smoothPolynoms;
 	vector<bool> rawRow;
 	int k;		
 	int i =0;
-	bitset<bitsOfUL> polyBitSet; 
-
+	
 	int polyColPos = nCols;
 		
 	//cerr << "\n Before loop";
@@ -700,9 +599,7 @@ BitMatrix::BitMatrix(map<mpz_class,std::vector<bool> > &rawMatrix,int sizeOfFact
 		{
 			bitset< bitsOfUL > bits = getBitset(rawRow, (unsigned) j*bitsOfUL, (unsigned) j*bitsOfUL+bitsOfUL);
 			//cerr << "\n got bitset " << bits.to_string();
-			unsigned long bitsUL = bits.to_ulong();
-			//cerr << "\n represented by u l " << bitsUL;
-			bitMatrix[i][j] = bitsUL; 
+			bitMatrix[i][j] = bits; 
 		}
 		//cerr << "\n Succesful moved rawMatrix row "<< i;
 	
@@ -710,16 +607,15 @@ BitMatrix::BitMatrix(map<mpz_class,std::vector<bool> > &rawMatrix,int sizeOfFact
  		if(i%bitsOfUL==0){
  			polyColPos = polyColPos -1;
  		}
-
+ 		bitset<bitsOfUL> polyBitSet; 
 		polyBitSet.set(i%bitsOfUL, true);		
-		bitMatrix[i][polyColPos] = polyBitSet.to_ulong();
-		polyBitSet.set(i%bitsOfUL, false);
+		bitMatrix[i][polyColPos] = polyBitSet;
 		i++;
 
 		//cerr << "\n Succesful added Polyending row "<< i;
 	
 	}
-	//cerr << "\n construction of BitMatrix done ";
+	cerr << "\n construction of BitMatrix done ";
 }
 //Destructor
 
@@ -730,155 +626,6 @@ BitMatrix::~BitMatrix(){
 
 	delete [] bitMatrix;
 }
-
-
-
-mpz_class matrixToFactor( mpz_class N, map<mpz_class, vector<bool> > &matrix, vector<mpz_class> &factorBase){
-	
-	int nPrimesInBase = factorBase.size();
-	int nSmoothPolynoms = matrix.size();
-	vector<mpz_class> smoothPolynoms;
-	mpz_class res =0;
-
-	for(std::map<mpz_class, vector<bool> >::const_iterator it = matrix.begin(); it != matrix.end(); it++)
-	{
-		mpz_class key = it->first;
-		smoothPolynoms.push_back(key);
-	}
-	cerr << "\n Starting creation of bitMatrix ...";
-	
-
-	//transpose matrix to transpose
-	map<mpz_class, vector<bool> > transpose;
-	//prepare one row for each prime in factorBase
-	for (int i = 0; i < nPrimesInBase; ++i)
-	{
-		vector<bool> newRow(nSmoothPolynoms); 
-		transpose[factorBase.at(i)] = newRow;
-
-	}
-	//cerr <<"\n Init transpose matrix with " << transpose.size() <<"rows";
-	//Transfer values
-	for (int i = 0; i <nPrimesInBase; ++i)
-	{
-		for (int j = 0; j < nSmoothPolynoms; ++j)
-		{
-			transpose[factorBase.at(i)].at(j) = matrix[smoothPolynoms.at(j)].at(i);
-		}
-	}
-	cerr << "\n Done Transfered values to transpose ... ";
-	map<mpz_class, vector<unsigned long> > transposeWithWords;
-	// Take transpose and translate each row from bool vectors to unsigned longs
-	// Each prime represents one row
-	cerr << "\nTranslating transpose into word 64 based matrix, with nSmoothPolynoms = " << nSmoothPolynoms;
-	for(int i = 0; i < nPrimesInBase; ++i){
-		vector<unsigned long> wordRow;
-		for (int j = 0; j < nSmoothPolynoms; j=j+64){ // enough words to cover all + a not finished word
-			bitset< 64 > bits = getBitset(transpose[i], j, j+64);
-			wordRow.push_back(bits.to_ulong());
-		}
-		transposeWithWords[i] = wordRow;
-	}
-	cerr << "\n Done with translation ...";
-
-
-
-
-
-
-
-
-	// //Do gaus on transpose;
-	// cerr << "\n Start gauss";
-	// mpz_class prime; 
-	// mpz_class polynom;
-	// //For each column 
-	// cerr << "\n number of rows (primes) are " << factorBase.size();
-	// cerr << "\n number of rows in transposeWithWords " << transposeWithWords.size();
-	// cerr << "\n number of columns (polynoms) are " << nSmoothPolynoms;
-	// cerr << "\n Now done with column :";
-
-	// for (int j = 0; j < nSmoothPolynoms; ++j){ // for each column
-
-	// 	if(j % 100 == 0){
-	// 	cerr << " " << j;
-	// 	}
-
-	// 	int indexFirstOccurance =-1;
-	// 	int indexFirstLeadingOne =-1;
-	// 	//cerr << "\n try reduce column for polynom " << smoothPolynoms.at(j);
-	// 	//for each row
-	// 	for (int i = 0; i < nPrimesInBase; ++i){
-
-	// 		//Try finding first leading 1 for column smoothPolynom j
-	// 		bool candidateLeadingOne = true; //sign if this row is a valid candidate for leading 1
-	// 		for(int k=0; k<=j;++k){
-	// 			 //check that all numbers before transpose[i].at(j) ==0 else this row is no candidate for leading 1
-	// 			 if( k<j && (getBitAt(transposeWithWords[i], k)==true) ){
-	// 			 		//note the index for first occurance of 1 for smooth polynom
-	// 			 		if(indexFirstOccurance<0){
-	// 			 			if(getBitAt(transposeWithWords[i],j)==true){
-	// 			 				indexFirstOccurance =i;
-	// 			 			}
-	// 			 		}
-	// 			 	candidateLeadingOne = false;
-	// 			 }
-	// 			 if(k==j && candidateLeadingOne && getBitAt(transposeWithWords[i],j)){
-	// 			 	//cerr << "\n First leading 1 for polynom " << smoothPolynoms.at(j) << " is on row with prime " << factorBase.at(i);
-	// 			 	indexFirstLeadingOne = i;
-	// 			 }
-	// 		}
-
-	// 		if(indexFirstLeadingOne>=0){
-	// 			//we have found a leading one
-	// 			//break and do gauss;
-	// 			break;
-	// 		}
-	// 	}
-	// 	//cerr << "\n Time to gauss";
-	// 	//Do gauss if leading one found
-	// 	if(indexFirstLeadingOne>=0){
-	// 		//reduce rows under row with leading on
-	// 		for (int i = indexFirstLeadingOne+1; i < nPrimesInBase; ++i) // for each row
-	// 		{
-	// 			//cerr<< "\n row tested for reduced have prime number " << prime;
-	// 			//if row have 1 on position j do row reduce with help of row that have first leading one 
-	// 			if(getBitAt(transposeWithWords[i],j)){
-	// 				//perform XOR between the row with leading 1 and the one which also has 1
-	// 				transposeWithWords[i] = rowXOR(transposeWithWords[indexFirstLeadingOne], transposeWithWords[i]);
-	// 				//cerr<< "\n row with prime number " << prime << " was reduced";
-
-	// 			}
-	// 		}
-	// 		if(indexFirstOccurance>=0){
-	// 		//reduce eventual rows over leading one
-	// 		for (int i = indexFirstOccurance; i < indexFirstLeadingOne; ++i){
-	// 			//if row have 1 on possition j do row reduce with help of row that have first leading one 
-	// 			if(getBitAt(transposeWithWords[i],j)){
-	// 				transposeWithWords[i] = rowXOR(transposeWithWords[indexFirstLeadingOne], transposeWithWords[i]);
-	// 				}
-	// 			}
-	// 		}
-
-	// 	}
-	// 	//Continue with the next column (polynom)
-
-	// }
-	// cerr << "\n Done gaussing, translating back to bool vector from word vector ... ";
-	// // for each row in transposeWithWords translate its values to transpose (overwriting old values pre gauss)
-	// for(int i = 0; i < factorBase.size(); ++i){
-	// 	transpose[i] = getBoolVector(transposeWithWords[i], nSmoothPolynoms);
-	// }
-	// cerr << "\n Done translating back, ..."; 
-
-
-	// mpz_class res = calcNonTrivalFactor(N, transpose,smoothPolynoms,factorBase);
-
-	return res;
-}
-
-
-
 
 
 map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vector<mpz_class> & factorBase, vector<mpz_class> & x1List, vector<mpz_class> & x2List, vector<double> & logPList){
@@ -1024,7 +771,7 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
 	B = 2*pow(e, bExp);
 	//TODO
-	//B=43;
+	B=43;
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
@@ -1049,17 +796,9 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	std::vector<mpz_class> x1List(factorBase.size());
 	std::vector<mpz_class> x2List(factorBase.size());
 
-	
-	// //TODO check if this work
-	// mpf_class floatN = N;
-	// floatN = sqrt(floatN);
-	// floatN = floor(floatN);
-	// mpz_class sqrtN(floatN);
 
 	mpz_class sqrtN = sqrt(N);
-	//qrtN = floor(sqrtN);
 	
-
 	mpz_class R1, R2,p,x1,x2;
 	for(unsigned i = 1; i< factorBase.size(); ++i){
 		
@@ -1084,7 +823,8 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 
 	cerr << "\n \n Smooth polynom generation done, starting with gaussian elimination for number \n " << N;
 	
-	mpz_class res = matrixToFactor(N, smoothPolynoms , factorBase);
+	BitMatrix bm(N,smoothPolynoms, (int) factorBase.size());
+	mpz_class res = bm.getFactorByQS();
 	return res;
 }
 
@@ -1180,60 +920,17 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 
 // }
 
-void testGetBinaryConversion(){
-	std::vector<bool> b;
-	b.push_back(true);
-	b.push_back(false);
-	b.push_back(false);
-	b.push_back(true);
-	b.push_back(true);
-	unsigned startIndex = 0;
-	unsigned stopIndex = b.size();
-	bitset< sizeof(unsigned long)*8 > output;
-	//output = getBitset(b, startIndex, stopIndex);
-	// cout << "\n bitset printed is " << output.to_string();
-	// unsigned long res = output.to_ulong();
-	// cout << "\n unsigned long is printed " << res;
-	// cout << "\n bit number 0 is " << ((res >> 0) & 1); 
-	// cout << "\n bit number 1 is " << ((res >> 1) & 1); 
-	// cout << "\n bit number 2 is " << ((res >> 2) & 1); 
-	// cout << "\n bit number 3 is " << ((res >> 3) & 1); 
-	// cout << "\n bit number 4 is " << ((res >> 4) & 1); 
-
-
-}
-
-void testGetBitAt(){
-	bitset< 64 > b1(14);
-	bitset< 64 > b2(1025);
-	cerr << "\n First word is " << b1.to_string();
-	cout << "\n Second word is " << b2.to_string();
-	vector<unsigned long> v;
-	v.push_back(b1.to_ulong());
-	v.push_back(b2.to_ulong());
-	cerr << "\n bit with index 0 is " << getBitAt(v, 0);
-	cerr << "\n bit with index 1 is " << getBitAt(v, 1);
-	cerr << "\n bit with index 64 is " << getBitAt(v, 64);
-	cerr << "\n bit with index 65 is " << getBitAt(v, 65);
-
-}
 
 void testUnsignedLongSize(){
 	cerr << "size of unsigned long is " << sizeof(unsigned long)*8;
 }
 
-void testSetBit(){
-	bitset <bitsOfUL > testBitSet;
-	testBitSet.set(0,true);
-	cerr << "\n when we set bit 0 we got u long " << testBitSet.to_ulong();
-	cerr << "\n when we set bit 0 we got string " << testBitSet.to_string();
-	testBitSet.set(0,false);	
-	testBitSet.set(bitsOfUL-1,true);
-	cerr << "\n when we set bit "<< bitsOfUL-1 << " we got u long " << testBitSet.to_ulong();
-	cerr << "\n when we set bit "<< bitsOfUL-1 << " we got u long " << testBitSet.to_string();
-}
+
+
+
 void testConstructBitMatrix(){
 		map<mpz_class,std::vector<bool> > testRawMatrix;
+		mpz_class N = 4711;
 		
 		for(int i =0;i<65;i++){
 			mpz_class key = i;
@@ -1249,22 +946,28 @@ void testConstructBitMatrix(){
 			testRawMatrix[key] = value;
 		}
 
-		BitMatrix bitMatrix(testRawMatrix,4);
+		BitMatrix bitMatrix(N,testRawMatrix,4);
 		bitMatrix.printPrimeMatrix();
 		bitMatrix.printPolyMatrix();
+		bitMatrix.gaussBitMatrix();
+		bitMatrix.printPrimeMatrix();
+		bitMatrix.printPolyMatrix();
+		bitMatrix.setZeros();
+		bitMatrix.printZeros();
 }
 
 int main() {	
 
 
-	testConstructBitMatrix();
+	//testConstructBitMatrix();
+	//exit(0);
 	//testSetBit();
-	//testQuadraticSieveOn90283();
+	testQuadraticSieveOn90283();
 	
 	//testGetBitAt();
 
 	//Gen test data
-		int j =0;		
+	int j =0;		
 	mpz_class* data = genTestData(j);
 
 	// Test binary conversion methods:
