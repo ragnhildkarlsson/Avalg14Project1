@@ -8,6 +8,7 @@
 #include <map>
 #include <bitset>
 #include <list>
+#include <fstream>
 
 
 using namespace std;
@@ -75,24 +76,17 @@ mpz_class gcd(mpz_class n1, mpz_class n2){
 }
 
 
-mpz_class * genTestData(int j){
+mpz_class * genTestData(string pNumber, int j){
 	
 	mpz_class sufix,ten, startval;
 	ten = 10;
 
 	sufix = pow(ten, 60+j);
 	static mpz_class data[200];
-	string micke = "9207064750";
-	string ragnhild = "8502142782";
-	startval = micke;
+
+	startval = pNumber;
 	startval = startval*sufix;
 	int index = 0;
-	for(int i=1; i<= 100;++i){
-		data[index] = startval+i;
-		++index;
-	}
-	startval = ragnhild;
-	startval = startval*sufix;	
 	for(int i=1; i<= 100;++i){
 		data[index] = startval+i;
 		++index;
@@ -1014,26 +1008,21 @@ void testConstructBitMatrix(){
 		BitMatrix bitMatrix(N,testRawMatrix,4);
 		bitMatrix.printPrimeMatrix();
 		bitMatrix.printPolyMatrix();
-		//bitMatrix.gaussBitMatrix();
-		//bitMatrix.printPrimeMatrix();
-		// bitMatrix.printPolyMatrix();
-		// bitMatrix.setZeros();
-		// bitMatrix.printZeros();
 }
 
 int main() {	
-	//testPrintMatrixesForWikiExample();
-	// testGetWikiPolynoms();
-	//testConstructBitMatrix();
-	//exit(0);
-	//testSetBit();
-	//testQuadraticSieveOn90283();
-	//exit(0);
-	//testGetBitAt();
+	//string pNumber = "9207064750";
+	string pNumber = "8502142782";
+
+
+	ofstream myfile;
+  	myfile.open ("ragnhildFactorization.txt");
 
 	//Gen test data
 	int j =0;		
-	mpz_class* data = genTestData(j);
+	myfile << pNumber << " " << j;
+  
+	mpz_class* data = genTestData(pNumber,j);
 
 	//Gen prime base
 	int maxB = 5000000; //TODO add 2 0
@@ -1046,10 +1035,12 @@ int main() {
 	
 	int count, stopIndex, startIndex;
 	//trials = 3;
-	startIndex = 25;
-	stopIndex =28;
+	startIndex = 0;
+	stopIndex =100;
 	
 	vector<mpz_class> factors;
+
+    
 
 	 for (int i = startIndex; i < stopIndex; ++i)
 	 {
@@ -1062,23 +1053,43 @@ int main() {
 	  	factors = factorize(data[i], primes);
 	  	if(factors.back() == -1){
 	  		cerr << "\n Uncomplete factorization ";
+	  		myfile << "\n";
 	  	}
 	  	else{
+	  		map<mpz_class,int> factorMap;
+	  		//Print the found factors to file
+	  		for (unsigned i = 0; i < factors.size() ; ++i){
+			if(factorMap.count(factors.at(i))>0)
+				factorMap[factors.at(i)] = factorMap[factors.at(i)]+1;
+			else
+				factorMap[factors.at(i)] = 1;
+			}
+			myfile <<"\n";
+			bool first =true;
+			for(std::map<mpz_class, int >::const_iterator it = factorMap.begin(); it != factorMap.end(); it++)
+			{
+				mpz_class factor = it->first;	
+				int frequency = it->second;
+				if(first){
+					myfile << factor << " " << frequency;
+					first =false;
+				}
+				else{
+					myfile << " " << factor << " " << frequency;
+				}
+			}
 	  		count++;
 	  	}
-	  	cout << "\n The number of prime factors is " << factors.size(); 
+	  	//Always print the facotrs we found
+	  	cout << "\n The number of found prime factors is " << factors.size(); 
 		//print factors
 		for (unsigned i = 0; i < factors.size() ; ++i)
-		{
 			cout <<"\n " << factors.at(i);
-		}
 		cout << "\n";
 		duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
 	    cout<<"\n Calculation time: "<< duration <<'\n';	
 	 }
 
-	cout << "\n Could factorize  " << count << " numbers out of " << stopIndex-startIndex << " starting on number "<<startIndex <<" with j = " << j;
-	 
 	// //TEST CODE
 
 	//mpz_class t1;
@@ -1086,7 +1097,7 @@ int main() {
 	//quadraticSieve(t1,primes);
 	//testGetPrimeFactor();
 	// testGenNullSpace();
-
+	myfile.close();
 	return (0);
 }
 
