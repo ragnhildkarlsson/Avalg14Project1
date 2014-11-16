@@ -12,6 +12,7 @@
 #include <map>
 
 
+
 using namespace std;
 
 
@@ -358,9 +359,8 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 		return factor;
 	}
 
-	int counterMaxTries = 0;
-	while(counterMaxTries < 50){
-		counterMaxTries++;
+	int countSameFactor =0;
+	while(true){
 		//cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
 		for(int i = 0; i < trials; ++i){
 
@@ -369,6 +369,8 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 			//cerr << i << " ";
 			//cerr << "\n Seed is \n " << seed;
 			temp = pollard(seed, add, factor,timeOut);
+			if(temp==factor)
+				countSameFactor++;
 			if(temp > 0){
 				factor = temp;
 				//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
@@ -379,7 +381,7 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 			}
 		}
 		// Tried trial times and still failed?
-		if(temp < 0){
+		if(temp < 0||countSameFactor>10){
 			cout << "\n Factorization failed by Pollard!";
 			//Return -1 to signal failing factorization
 			return error;
@@ -717,7 +719,6 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 			mpz_class x2Index = x2List.at(i) - firstXInBatch;
 
 			for(unsigned long j = x1Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
-
 				polynomsLog.at(j) = polynomsLog.at(j) - logPList.at(i);		
 			}
 			for(unsigned long j = x2Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
@@ -1025,8 +1026,7 @@ int main() {
 
 	//Gen test data
 	int j =0;		
-	myfile << pNumber << " " << j;
-  
+	
 	mpz_class* data = genTestData(pNumber,j);
 
 	//Gen prime base
@@ -1040,9 +1040,10 @@ int main() {
 	
 	int count, stopIndex, startIndex;
 	//trials = 3;
-	startIndex = 0;
-	stopIndex =100;
-	
+	startIndex = 47;
+	stopIndex =57;
+	myfile << pNumber << " " << j << " " << startIndex << " " <<stopIndex;
+  
 	vector<mpz_class> factors;
 
     
