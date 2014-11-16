@@ -359,7 +359,7 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 	}
 
 	int counterMaxTries = 0;
-	while(counterMaxTries < 50){
+	while(true){
 		counterMaxTries++;
 		//cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
 		for(int i = 0; i < trials; ++i){
@@ -369,6 +369,9 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 			//cerr << i << " ";
 			//cerr << "\n Seed is \n " << seed;
 			temp = pollard(seed, add, factor,timeOut);
+			if(temp == factor){
+				return error;
+			}
 			if(temp > 0){
 				factor = temp;
 				//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
@@ -581,10 +584,10 @@ void BitMatrix::gaussBitMatrix(){
 	int colToGauss=0;
 	int bitToGauss;
 	//Find leading one
-	cerr << "\n Gauss done for bit ";
+	//cerr << "\n Gauss done for bit ";
 	for(int i=0; i<nPrimesInBase;i++){
 		bitToGauss = i ;
-		cerr << " " << i;
+		//cerr << " " << i;
 		bool foundLeadingOne=false;
 		
 		indexLeadingOne =0;
@@ -745,7 +748,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 				mpz_class numberToFactor = originPolynom;
 				vector<bool> polynomInFactorBase(factorBase.size(), false);	
 				while(numberToFactor!= 1){
-					temp = getPrimeFactorByPollard(numberToFactor,10,2);
+					temp = getPrimeFactorByPollard(numberToFactor,2,10);
 					bool validFactor = false;
 					//check if recived factor is in factorBase				
 					if (factorBaseMap.count(temp) > 0){
@@ -1016,12 +1019,12 @@ void testConstructBitMatrix(){
 }
 
 int main() {	
-	//string pNumber = "9207064750";
-	string pNumber = "8502142782";
+	string pNumber = "9207064750";
+	//string pNumber = "8502142782";
 
 
 	ofstream myfile;
-  	myfile.open ("ragnhildFactorization.txt");
+  	myfile.open ("micke2.txt");
 
 	//Gen test data
 	int j =0;		
@@ -1041,9 +1044,11 @@ int main() {
 	int count, stopIndex, startIndex;
 	//trials = 3;
 	startIndex = 0;
-	stopIndex =100;
+	stopIndex =4;
 	
 	vector<mpz_class> factors;
+
+	static const  int hard[] = {16,20,21,28};
 
     
 
@@ -1055,7 +1060,7 @@ int main() {
     	start = std::clock();
 
 
-	  	factors = factorize(data[i], primes);
+	  	factors = factorize(data[hard[i]], primes);
 	  	if(factors.back() == -1){
 	  		cerr << "\n Uncomplete factorization ";
 	  		myfile << "\n";
