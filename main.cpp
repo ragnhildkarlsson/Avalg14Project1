@@ -9,6 +9,7 @@
 #include <bitset>
 #include <list>
 #include <fstream>
+#include <map>
 
 
 using namespace std;
@@ -660,114 +661,118 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 	mpz_class firstXInBatch =1;
 	mpz_class p,temp;
 
+	map<mpz_class,int> factorBaseMap;
+	for(unsigned i =0; i<factorBase.size();++i)
+		factorBaseMap[factorBase.at(i)]=i;
+
 	while(factoredPolynoms.size() < factorBase.size()+10){
-	//Create polynoms
-	//cerr << "\n\n Trying to generate more smooth polynoms \n";
-	int nPolynoms = factorBase.size()*200;//: 21474836;
-	vector<double> polynomsLog(nPolynoms);
+		//Create polynoms
+		cerr << "\n\n\t Generate more smooth polynoms";
+		int nPolynoms = factorBase.size()*200;//: 21474836;
+		vector<double> polynomsLog(nPolynoms);
 
 	
-	if(firstXInBatch==1){
-		for(int i =1; i<=nPolynoms;++i){		
-			mpz_class qx = calculatePolynom(N, sqrtN, xInPolynom);
-			polynomsLog.at(i-1) = (log(qx.get_d()));
-			xInPolynom = xInPolynom+1;
+		if(firstXInBatch==1){
+			for(int i =1; i<=nPolynoms;++i){		
+				mpz_class qx = calculatePolynom(N, sqrtN, xInPolynom);
+				polynomsLog.at(i-1) = (log(qx.get_d()));
+				xInPolynom = xInPolynom+1;
+			}
 		}
-	}
-	else{
-		mpz_class lastX = firstXInBatch+nPolynoms;
-		mpz_class lastQX = calculatePolynom(N,sqrtN, lastX); 
-		double lastLogQX = log(lastQX.get_d()); 
-		for(int i =1; i<=nPolynoms;++i){		
-			polynomsLog.at(i-1) = lastLogQX;
-			xInPolynom = xInPolynom+1;
-		}
+		else{
+			mpz_class lastX = firstXInBatch+nPolynoms;
+			mpz_class lastQX = calculatePolynom(N,sqrtN, lastX); 
+			double lastLogQX = log(lastQX.get_d()); 
+			for(int i =1; i<=nPolynoms;++i){		
+				polynomsLog.at(i-1) = lastLogQX;
+				xInPolynom = xInPolynom+1;
+			}
 
-	}
-	//cerr <<"\n polynoms in batch " << polynomsLog.size();
-	//cerr << "\nlowest log polynom " << polynomsLog.front();
-	//cerr << "\n highest log polynom " << polynomsLog.back();
-	//cerr << "\n diff between lowest and highest polynom " << polynomsLog.back() - polynomsLog.front();
-	// - SIEVE TIME -
-	//Sieve the polynomsLog
-	//Obs ignoring p==2
+		}
+		//cerr <<"\n polynoms in batch " << polynomsLog.size();
 		
-	for(unsigned i = 1; i< factorBase.size(); ++i){
+		//cerr <<"\n polynoms in batch " << polynomsLog.size();
+		//cerr << "\nlowest log polynom " << polynomsLog.front();
+		//cerr << "\n highest log polynom " << polynomsLog.back();
+		//cerr << "\n diff between lowest and highest polynom " << polynomsLog.back() - polynomsLog.front();
+		// - SIEVE TIME -
+		//Sieve the polynomsLog
+		//Obs ignoring p==2
+		cerr <<"\n\tstart log sieving";
+			
+		for(unsigned i = 1; i< factorBase.size(); ++i){
+			
+			p = factorBase.at(i);
+
+			//Add p until reach x-values in this batch 
+			while(x1List.at(i) < firstXInBatch){
+				x1List.at(i) = x1List.at(i) +p;
+			}
+			while(x2List.at(i) < firstXInBatch){
+				x2List.at(i) = x2List.at(i) +p;
+			}
+			
+			//cerr << "\n Entering log sieve with p "<< p; 
+			mpz_class x1Index = x1List.at(i) - firstXInBatch;
+			mpz_class x2Index = x2List.at(i) - firstXInBatch;
+
+			for(unsigned long j = x1Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
+
+				polynomsLog.at(j) = polynomsLog.at(j) - logPList.at(i);		
+			}
+			for(unsigned long j = x2Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
+				polynomsLog.at(j) = polynomsLog.at(j) - logPList.at(i);
+			}
+
+		}
+
+		double factorLimit = log(factorBase.back().get_d())+1; //TODO
 		
-		p = factorBase.at(i);
-
-		//Add p until reach x-values in this batch 
-		while(x1List.at(i) < firstXInBatch){
-			x1List.at(i) = x1List.at(i) +p;
-		}
-		while(x2List.at(i) < firstXInBatch){
-			x2List.at(i) = x2List.at(i) +p;
-		}
+		vector<mpz_class> factors;
 		
-		//cerr << "\n Entering log sieve with p "<< p; 
-		mpz_class x1Index = x1List.at(i) - firstXInBatch;
-		mpz_class x2Index = x2List.at(i) - firstXInBatch;
-
-		for(unsigned long j = x1Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
-
-			polynomsLog.at(j) = polynomsLog.at(j) - logPList.at(i);		
-		}
-		for(unsigned long j = x2Index.get_ui(); j < polynomsLog.size(); j=j+p.get_ui()){
-			polynomsLog.at(j) = polynomsLog.at(j) - logPList.at(i);
-		}
-
-	}
-
-	double factorLimit = log(factorBase.back().get_d())+1; //TODO
-	
-	vector<mpz_class> factors;
-	
-	cerr << "\n done with log sieving factor limit is " << factorLimit;
+		//cerr << "\n done with log sieving factor limit is " << factorLimit;
 
 
-	// sieve out the smooth polynoms.
-	
-	int count=0;
-	for(unsigned i =0; i<polynomsLog.size();++i){
-		//cerr << "\n polynomLog resten är " << polynomsLog.at(i) << " and index is " << i<<" polynom is "<< polynoms.at(i);
-		if(polynomsLog.at(i)< factorLimit){
-			count++;
-			mpz_class originPolynom = calculatePolynom(N,sqrtN,(firstXInBatch+i));
-			mpz_class numberToFactor = originPolynom;
-			vector<bool> polynomInFactorBase(factorBase.size(), false);	
-			while(numberToFactor!= 1){
-				temp = getPrimeFactorByPollard(numberToFactor,10,20);
-				bool validFactor = false;
-				//check if recived factor is in factorBase				
-				if (temp>0){
-					for(unsigned k = 0; k < factorBase.size(); ++k){
-						if(factorBase.at(k) == temp){ // Factor in factorBase, prepare vector 
-							polynomInFactorBase.at(k) = !polynomInFactorBase.at(k); // flip value
-							numberToFactor= numberToFactor/temp;
-							validFactor = true;
-							break;
-						}
+		// sieve out the smooth polynoms.
+		cerr << "\n\tstart check wich polynoms are actually smoth";
+		
+		int count=0;
+		for(unsigned i =0; i<polynomsLog.size();++i){
+			//cerr << "\n polynomLog resten är " << polynomsLog.at(i) << " and index is " << i<<" polynom is "<< polynoms.at(i);
+			if(polynomsLog.at(i)< factorLimit){
+				count++;
+				mpz_class originPolynom = calculatePolynom(N,sqrtN,(firstXInBatch+i));
+				mpz_class numberToFactor = originPolynom;
+				vector<bool> polynomInFactorBase(factorBase.size(), false);	
+				while(numberToFactor!= 1){
+					temp = getPrimeFactorByPollard(numberToFactor,10,2);
+					bool validFactor = false;
+					//check if recived factor is in factorBase				
+					if (factorBaseMap.count(temp) > 0){
+						int indexToFlip = factorBaseMap[temp];						
+						polynomInFactorBase.at(indexToFlip) = !polynomInFactorBase.at(indexToFlip); // flip value
+						numberToFactor= numberToFactor/temp;
+						validFactor = true;						
+					}
+					if(validFactor == false){
+						break;
 					}
 				}
-				if(validFactor == false){
-					break;
+				if(numberToFactor ==1){
+					factoredPolynoms[originPolynom] = polynomInFactorBase;
 				}
 			}
-			if(numberToFactor ==1){
-				factoredPolynoms[originPolynom] = polynomInFactorBase;
-			}
+
 		}
+			// Factorization of polynoms complete. Time to gauss
+			cerr << "\n Number of logsmooth polynoms " << count ;		
+			cerr << "\n FactorBase size is " << factorBase.size();
+			cerr << "\n Number of polynoms generated " << polynomsLog.size();
+			cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
+			duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
+			cerr << "\n we have now spent " << duration << " seconds on generating smooth polynoms ";
 
-	}
-		// Factorization of polynoms complete. Time to gauss
-		cerr << "\n Number of logsmooth polynoms " << count ;		
-		cerr << "\n FactorBase size is " << factorBase.size();
-		cerr << "\n Number of polynoms generated " << polynomsLog.size();
-		cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
-		duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
-		cerr << "\n we have now spent " << duration << " seconds on generating smooth polynoms ";
-
-		firstXInBatch = xInPolynom;
+			firstXInBatch = xInPolynom;
 	}
 	return factoredPolynoms;
 
