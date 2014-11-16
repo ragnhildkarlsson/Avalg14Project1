@@ -17,7 +17,7 @@ static const  int smallPrimes[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,5
 static const int primeLength = 26;
 static const int primeSafety = 10;
 static const double e = 2.718281;
-static const int bitsOfUL = 1;//sizeof(unsigned long) *8;
+static const int bitsOfUL = 64;//sizeof(unsigned long) *8;
 
 bitset<bitsOfUL > getBitset(vector<bool> & bools, unsigned startIndex, unsigned stopIndex){
 	bitset< bitsOfUL > result;
@@ -413,6 +413,10 @@ class BitMatrix
 		mpz_class getFactorByQS();
 		void gaussBitMatrix();
 		void setZeros();
+		void setPrimeBit(int row, int bit);
+		void setPolyBit(int row, int bit);
+		bool testPrimeBit(int row, int bit);
+		bool testPolyBit(int row, int bit);
 
 	private:
 		mpz_class N;
@@ -459,24 +463,12 @@ BitMatrix::BitMatrix(mpz_class numberToFactor, map<mpz_class,std::vector<bool> >
 		mpz_class key = it->first;	
 		smoothPolynoms.push_back(key);
 		rawRow = it->second;
-		for (int j = 0; j < nPrimeCols; ++j)
-		{
-			bitset< bitsOfUL > bits;
-			int bitSetIndex = 0;
-			for(int l = j*bitsOfUL; l<rawRow.size() &&  l<j*bitsOfUL+bitsOfUL;++l){
-				if(rawRow[l])
-					bits[bitSetIndex] = 1;
-				bitSetIndex++;
-			}
-			//cerr << "\n got bitset " << bits.to_string();
-			primeMatrix[i][j] = bits; 
-		}
-
-	 	int polyChunk = i/bitsOfUL;
-	 	polyMatrix[i][polyChunk].set(i%bitsOfUL,true);
+		for (int j = 0; j < nPrimesInBase; ++j)
+			if(rawRow.at(j))
+				setPrimeBit(i,j);
+		setPolyBit(i,i);
 		i++;
-		//cerr << "\n Succesful added Polyending row "<< i;
-	
+		//cerr << "\n Succesful added Polyending row "<< i;	
 	}
 	cerr << "\n construction of BitMatrix done ";
 }
@@ -493,16 +485,28 @@ BitMatrix::~BitMatrix(){
 }
 
 
+void BitMatrix::setPrimeBit(int row, int bit){
+	primeMatrix[row][bit/bitsOfUL].set(bit%bitsOfUL,true);
+}
+bool BitMatrix::testPrimeBit(int row, int bit){
+	return primeMatrix[row][bit/bitsOfUL].test(bit%bitsOfUL);
+}
 
+void BitMatrix::setPolyBit(int row, int bit){
+	polyMatrix[row][bit/bitsOfUL].set(bit%bitsOfUL,true);
+}
+bool BitMatrix::testPolyBit(int row, int bit){
+	return polyMatrix[row][bit/bitsOfUL].test(bit%bitsOfUL);
+}
 
 
 mpz_class BitMatrix::getFactorByQS(){
-	printPrimeMatrix();
+	//printPrimeMatrix();
+	cerr << "\n Start gauss matrix";	
 	gaussBitMatrix();
-	cerr << "\n  After gauss";
-	printPrimeMatrix();
-	printPolyMatrix();
+	cerr << "\n Done gauss matrix";
 	setZeros();
+	cerr << "\n Done find zeros";
 	mpz_class res=-1;
 	mpz_class square;
 	vector<mpz_class> polynomsInSolution;
@@ -510,22 +514,18 @@ mpz_class BitMatrix::getFactorByQS(){
 	mpz_class rawPolynom; 
 	mpz_class prod2 =1;
 	mpz_class diff;
-	cerr << "\n The smoothPolynoms are";
+	//cerr << "\n The smoothPolynoms are";
 	for(unsigned i =0; i<smoothPolynoms.size();++i){
 		cerr << " "<<smoothPolynoms[i];
 	}
 
 	for(unsigned i=0; i<zeros.size();++i){
-		int col = 0;
 		prod1 =1;
 		prod2 =1;
 		//find polynoms in soulution		
 		for(int j=0;j<nSmoothPolynoms;++j){
-			if(j>0 && j%bitsOfUL){
-				col++;
-			}
-			if(polyMatrix[zeros.at(i)][col].test(j%bitsOfUL)){
-				cerr << "\n added polynom to soulution " << smoothPolynoms.at(j); 
+			if(testPolyBit(zeros.at(i),j)){
+				//cerr << "\n added polynom to soulution " << smoothPolynoms.at(j); 
 				polynomsInSolution.push_back(smoothPolynoms.at(j));
 			}			
 		}
@@ -540,10 +540,10 @@ mpz_class BitMatrix::getFactorByQS(){
 		}
 		prod1=sqrt(prod1);
 		prod2 =sqrt(prod2);
-		cerr << "\n prod1 " << prod1 <<" prod2 "<< prod2;	
+		//cerr << "\n prod1 " << prod1 <<" prod2 "<< prod2;	
 		square = prod2-prod1;
 		res = gcd(square,N);
-		cerr << "\n prod1 " << prod1 <<" prod2 "<< prod2 << " res " << res;
+		//cerr << "\n prod1 " << prod1 <<" prod2 "<< prod2 << " res " << res;
 		if(res!=1 &&  res!=N){
 			cerr << "\n CALCULATED RES IS " << res;
 			return res;
@@ -586,17 +586,17 @@ void BitMatrix::gaussBitMatrix(){
 	int colToGauss=0;
 	int bitToGauss;
 	//Find leading one
+	cerr << "\n Gauss done for bit ";
 	for(int i=0; i<nPrimesInBase;i++){
 		bitToGauss = i ;
+		cerr << " " << i;
 		bool foundLeadingOne=false;
 		
 		indexLeadingOne =0;
 
-		if(bitToGauss>0&&bitToGauss%bitsOfUL==0)
-			colToGauss++;
 		//Find leading one
 		for(int j=0;j<nSmoothPolynoms;++j){
-			if(possibleLeadingOneRows[indexLeadingOne] && primeMatrix[indexLeadingOne][colToGauss].test(bitToGauss%bitsOfUL)){
+			if(possibleLeadingOneRows[indexLeadingOne] && testPrimeBit(j,bitToGauss)){
 				possibleLeadingOneRows[indexLeadingOne] =false;
 				foundLeadingOne = true;
 				break;
@@ -606,8 +606,8 @@ void BitMatrix::gaussBitMatrix(){
 		if(foundLeadingOne)
 			for(int j=0;j<nSmoothPolynoms;++j)
 				if(j!=indexLeadingOne)
-					if(primeMatrix[j][colToGauss].test(bitToGauss%bitsOfUL)){
-						for(int k= colToGauss;k<nPrimeCols;k++)
+					if(testPrimeBit(j,bitToGauss)){
+						for(int k=bitToGauss/bitsOfUL;k<nPrimeCols;k++)
 							primeMatrix[j][k] ^= primeMatrix[indexLeadingOne][k];							
 						for(int k=0;k<nPolyCols;k++)
 							polyMatrix[j][k] ^=polyMatrix[indexLeadingOne][k];
@@ -796,7 +796,7 @@ mpz_class quadraticSieve(mpz_class N, vector<mpz_class> &primes){
 	bExp = sqrt(log(doubleN)*log(log(doubleN)))*0.5;
 	B = 2*pow(e, bExp);
 	//TODO
-	B=43;
+	//B=43;
 	temp = 2;
 	factorBase.push_back(temp);
 	//cerr <<"\n our factorBase contains ";
@@ -890,7 +890,7 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	
 	while(N!=1){
 		factor = quadraticSieve(N,primes);
-		if(factor<0){
+		if(factor>0){
 			cerr <<"\n Found factor " << temp << " by quadratic sieve";
 			N = N / factor;
 			factors.push_back(factor);
@@ -908,6 +908,7 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	}
 	return factors;
 	}
+
 
 	void testQuadraticSieveOn90283() {
 	int maxB = 50000;
@@ -988,33 +989,9 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	}
 
 
-// void testGetPrimeFactor(){
-// 	mpz_class res;
-// 	mpz_class N = "57385973589534549";
-// 	res = getPrimeFactorByPollard(N,10,20);
-// 	cerr <<"\n found factor "<< res << " in " << N;
-// }
-// void testGenNullSpace(){
-// 	int maxB = 50000;
-// 	cerr << "\nGenerating primes...";
-// 	vector<mpz_class> primes;	
-// 	primes = genPrimeBase(maxB);
-// 	cerr <<"\nsize of primes " << primes.size();
-// 	cerr << "\nPrimes generated";
-	
-// 	mpz_class n = 90283;
-// 	quadraticSieve(n, primes);
-	
-
-// }
-
-
 void testUnsignedLongSize(){
 	cerr << "size of unsigned long is " << sizeof(unsigned long)*8;
 }
-
-
-
 
 void testConstructBitMatrix(){
 		map<mpz_class,std::vector<bool> > testRawMatrix;
@@ -1045,24 +1022,18 @@ void testConstructBitMatrix(){
 }
 
 int main() {	
-	testPrintMatrixesForWikiExample();
+	//testPrintMatrixesForWikiExample();
 	// testGetWikiPolynoms();
 	//testConstructBitMatrix();
 	//exit(0);
 	//testSetBit();
 	//testQuadraticSieveOn90283();
-	exit(0);
+	//exit(0);
 	//testGetBitAt();
 
 	//Gen test data
 	int j =0;		
 	mpz_class* data = genTestData(j);
-
-	// Test binary conversion methods:
-	//testGetBinaryConversion();
-	//testGetBitAt();
-
-
 
 	//Gen prime base
 	int maxB = 5000000; //TODO add 2 0
