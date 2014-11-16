@@ -136,7 +136,10 @@ int isPrime(mpz_class n, int rep){
 	mpz_class rest, t, s, a, u;
 	gmp_randclass rand (gmp_randinit_default);
 	bool isPrime;
-	isPrime = false;	
+	isPrime = false;
+	if(n==1){
+		return 0;
+	}	
 	if(n==2){
 		return 1;
 	}
@@ -355,25 +358,25 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 		return factor;
 	}
 
-	while(!primFound){
+	int counterMaxTries = 0;
+	while(counterMaxTries < 50){
+		counterMaxTries++;
 		//cerr << "\n Entering primFound loop with factor: \n " << factor << "\n Trial nr: ";
 		for(int i = 0; i < trials; ++i){
+
 			seed = rand.get_z_range(factor-1) +1;
 			add = 1; //TODO Hard CODED
 			//cerr << i << " ";
 			//cerr << "\n Seed is \n " << seed;
 			temp = pollard(seed, add, factor,timeOut);
-				if(temp > 0){
-					factor = temp;
-					//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
-					if(factor > 0 && isPrime(factor,primeSafety)){
-						return factor;
-					}
-					// Compsite number found, try to factor it into a prime
-					if(factor > 0) {
-						break;
-					}
-				}
+			if(temp > 0){
+				factor = temp;
+				//cerr << "\nIs the factor " << factor << " considered prime? " << isPrime(factor,10);
+				if(isPrime(factor,primeSafety))
+					return factor;
+				// Compsite number found, try to factor it into a prime
+				break;
+			}
 		}
 		// Tried trial times and still failed?
 		if(temp < 0){
@@ -381,12 +384,9 @@ mpz_class getPrimeFactorByPollard(mpz_class N, int trials, int timeOut){
 			//Return -1 to signal failing factorization
 			return error;
 		}
-
 	}
 	cout << "\n Factorization failed by Pollard!";
 	return error;
-
-	
 }
 
 mpz_class calculatePolynom(mpz_class N, mpz_class sqrtN, mpz_class x){
