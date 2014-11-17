@@ -10,6 +10,7 @@
 #include <list>
 #include <fstream>
 #include <map>
+#include <sstream>
 
 
 
@@ -586,7 +587,8 @@ void BitMatrix::gaussBitMatrix(){
 	cerr << "\n Gauss done for bit ";
 	for(int i=0; i<nPrimesInBase;i++){
 		bitToGauss = i ;
-		cerr << " " << i;
+		if(i%500==0)
+			cerr << " " << i;
 		bool foundLeadingOne=false;
 		
 		indexLeadingOne =0;
@@ -1020,10 +1022,6 @@ int main() {
 	//string pNumber = "9207064750";
 	string pNumber = "8502142782";
 
-
-	ofstream myfile;
-  	myfile.open ("ragnhildFactorization.txt");
-
 	//Gen test data
 	int j =0;		
 	
@@ -1040,27 +1038,48 @@ int main() {
 	
 	int count, stopIndex, startIndex;
 	//trials = 3;
-	startIndex = 47;
-	stopIndex =57;
-	myfile << pNumber << " " << j << " " << startIndex << " " <<stopIndex;
+	//startIndex = 47;
+	//stopIndex =52;
   
 	vector<mpz_class> factors;
+	vector<int> hardNumbersIndexRagnhild;
+	hardNumbersIndexRagnhild.push_back(11);   	
+	hardNumbersIndexRagnhild.push_back(14);	
+	hardNumbersIndexRagnhild.push_back(21);		
+	hardNumbersIndexRagnhild.push_back(27);		
+	hardNumbersIndexRagnhild.push_back(36);		
+	hardNumbersIndexRagnhild.push_back(37);			
+	hardNumbersIndexRagnhild.push_back(40);				
+	hardNumbersIndexRagnhild.push_back(48);
+	
+	string dataNumberString;
+	 for (unsigned i = 0; i < hardNumbersIndexRagnhild.size(); ++i)
+	 {	
 
-    
-
-	 for (int i = startIndex; i < stopIndex; ++i)
-	 {
+	 	int dataNumber = hardNumbersIndexRagnhild.at(i) + 1; 	
+	 	stringstream ss;
+        ss << dataNumber;
+        ss.str();
+        dataNumberString = ss.str();
+        string stringFileName = pNumber + "_"+ dataNumberString;
+        ofstream myfile;
+        myfile.open(stringFileName.c_str());
+        myfile << pNumber << "_" << j << "_" << hardNumbersIndexRagnhild.at(i);
+        myfile.close();
+		
 		cout << "\n\n\n TRYING TO FACTORIZE NEW NUMBER";
 	 	std::clock_t start;
     	double duration;
     	start = std::clock();
-
-
-	  	factors = factorize(data[i], primes);
+	  	factors = factorize(data[hardNumbersIndexRagnhild.at(i)], primes);
+	  	
 	  	if(factors.back() == -1){
 	  		cerr << "\n Uncomplete factorization ";
-	  		myfile << "\n";
+	  		myfile.open(stringFileName.c_str(), std::ios_base::app);                    
+	  		myfile << "\n Uncomplete factorization";
+	  		myfile.close();
 	  	}
+	  	
 	  	else{
 	  		map<mpz_class,int> factorMap;
 	  		//Print the found factors to file
@@ -1070,6 +1089,8 @@ int main() {
 			else
 				factorMap[factors.at(i)] = 1;
 			}
+			//Print Result
+			myfile.open(stringFileName.c_str(), std::ios_base::app);                    	  		
 			myfile <<"\n";
 			bool first =true;
 			for(std::map<mpz_class, int >::const_iterator it = factorMap.begin(); it != factorMap.end(); it++)
@@ -1084,13 +1105,14 @@ int main() {
 					myfile << " " << factor << " " << frequency;
 				}
 			}
+			myfile.close();	  		
 	  		count++;
 	  	}
 	  	//Always print the facotrs we found
 	  	cout << "\n The number of found prime factors is " << factors.size(); 
 		//print factors
 		for (unsigned i = 0; i < factors.size() ; ++i)
-			cout <<"\n " << factors.at(i);
+		cout <<"\n " << factors.at(i);
 		cout << "\n";
 		duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
 	    cout<<"\n Calculation time: "<< duration <<'\n';	
@@ -1103,7 +1125,7 @@ int main() {
 	//quadraticSieve(t1,primes);
 	//testGetPrimeFactor();
 	// testGenNullSpace();
-	myfile.close();
+	//myfile.close();
 	return (0);
 }
 
