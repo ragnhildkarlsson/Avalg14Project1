@@ -1051,6 +1051,11 @@ int main() {
 	hardNumbersIndexRagnhild.push_back(37);			
 	hardNumbersIndexRagnhild.push_back(40);				
 	hardNumbersIndexRagnhild.push_back(48);
+	hardNumbersIndexRagnhild.push_back(50);
+	hardNumbersIndexRagnhild.push_back(52);
+	hardNumbersIndexRagnhild.push_back(55);
+	
+	
 	
 	string dataNumberString;
 	 for (unsigned i = 0; i < hardNumbersIndexRagnhild.size(); ++i)
