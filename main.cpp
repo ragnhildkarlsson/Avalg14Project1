@@ -671,8 +671,8 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 
 	while(factoredPolynoms.size() < factorBase.size()+10){
 		//Create polynoms
-		cerr << "\n\n\t Generate more smooth polynoms";
-		int nPolynoms = factorBase.size()*200;//: 21474836;
+		//cerr << "\n\n\t Generate more smooth polynoms";
+		int nPolynoms = factorBase.size()*2;//: 21474836;
 		vector<double> polynomsLog(nPolynoms);
 
 	
@@ -702,7 +702,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 		// - SIEVE TIME -
 		//Sieve the polynomsLog
 		//Obs ignoring p==2
-		cerr <<"\n\tstart log sieving";
+		//cerr <<"\n\tstart log sieving";
 			
 		for(unsigned i = 1; i< factorBase.size(); ++i){
 			
@@ -737,7 +737,7 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 
 
 		// sieve out the smooth polynoms.
-		cerr << "\n\tstart check wich polynoms are actually smoth";
+		//cerr << "\n\tstart check wich polynoms are actually smoth";
 		
 		int count=0;
 		for(unsigned i =0; i<polynomsLog.size();++i){
@@ -767,13 +767,15 @@ map<mpz_class, vector<bool> > genSmothPolynoms(mpz_class N, mpz_class sqrtN, vec
 			}
 
 		}
+			if(factoredPolynoms.size()%500==0){
 			// Factorization of polynoms complete. Time to gauss
-			cerr << "\n Number of logsmooth polynoms " << count ;		
+			//cerr << "\n Number of logsmooth polynoms " << count ;		
 			cerr << "\n FactorBase size is " << factorBase.size();
 			cerr << "\n Number of polynoms generated " << polynomsLog.size();
 			cerr << "\n Number of factored polynoms " << factoredPolynoms.size();
 			duration = (std::clock() - pClock ) / (double) CLOCKS_PER_SEC;
 			cerr << "\n we have now spent " << duration << " seconds on generating smooth polynoms ";
+			}
 
 			firstXInBatch = xInPolynom;
 	}
@@ -861,7 +863,7 @@ std::vector<mpz_class> factorize(mpz_class N, vector<mpz_class> &primes ){
 	vector<mpz_class> factors;	
 	mpz_class temp,factor;
 	int trials = 2;
-	int timeOut = 60;
+	int timeOut = 60;//900;
 
 	//Check if N is prime
 	if(isPrime(N,10)){
@@ -1037,23 +1039,12 @@ int main() {
 
 	
 	int count, stopIndex, startIndex;
-	//trials = 3;
-	//startIndex = 47;
-	//stopIndex =52;
   
 	vector<mpz_class> factors;
 	vector<int> hardNumbersIndexRagnhild;
-	hardNumbersIndexRagnhild.push_back(11);   	
-	hardNumbersIndexRagnhild.push_back(14);	
-	hardNumbersIndexRagnhild.push_back(21);		
-	hardNumbersIndexRagnhild.push_back(27);		
-	hardNumbersIndexRagnhild.push_back(36);		
-	hardNumbersIndexRagnhild.push_back(37);			
-	hardNumbersIndexRagnhild.push_back(40);				
-	hardNumbersIndexRagnhild.push_back(48);
-	hardNumbersIndexRagnhild.push_back(50);
-	hardNumbersIndexRagnhild.push_back(52);
-	hardNumbersIndexRagnhild.push_back(55);
+	//The hard number is:
+
+	hardNumbersIndexRagnhild.push_back(24);   	
 	
 	
 	
@@ -1123,14 +1114,7 @@ int main() {
 	    cout<<"\n Calculation time: "<< duration <<'\n';	
 	 }
 
-	// //TEST CODE
 
-	//mpz_class t1;
-	//t1 = "90283";	
-	//quadraticSieve(t1,primes);
-	//testGetPrimeFactor();
-	// testGenNullSpace();
-	//myfile.close();
 	return (0);
 }
 
